@@ -1,4 +1,5 @@
-const API = '/api'
+const API_BASE = (import.meta.env.VITE_API_URL as string | undefined)?.replace(/\/$/, '') ?? ''
+const API = API_BASE ? `${API_BASE}/api` : '/api'
 
 export type TokenRole = 'advertiser' | 'media_owner' | 'super_admin'
 

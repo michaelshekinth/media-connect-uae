@@ -83,6 +83,34 @@ VITE_MEDIA_OWNER_URL=http://localhost:5175
 VITE_ADMIN_URL=http://localhost:5174
 ```
 
+### Deploy to Vercel
+
+Create **three Vercel projects** from the same GitHub repo:
+
+| Vercel project | Root directory | Notes |
+|----------------|----------------|-------|
+| `media-connect-uae` | `.` (repo root) | Advertisers + API (`/api/*`) |
+| `media-connect-uae-owner` | `media-owner` | Set `VITE_API_URL` to advertisers URL |
+| `media-connect-uae-admin` | `super-admin` | Set `VITE_API_URL` to advertisers URL |
+
+**Required env vars** (advertisers / API project):
+
+- `MONGODB_URI` — MongoDB Atlas connection string
+- `JWT_SECRET` — strong random secret
+
+**Media owner & super admin projects** also need:
+
+- `VITE_API_URL` — e.g. `https://media-connect-uae.vercel.app` (no trailing slash)
+
+CLI deploy (from repo root):
+
+```bash
+npx vercel link
+npx vercel env add MONGODB_URI
+npx vercel env add JWT_SECRET
+npx vercel --prod
+```
+
 ### Scripts
 
 | Script | Description |

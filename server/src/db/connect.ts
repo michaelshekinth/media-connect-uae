@@ -7,6 +7,9 @@ let memoryServer: MongoMemoryServer | null = null
 export async function connectDb(): Promise<string> {
   let uri = env.mongoUri
   if (!uri) {
+    if (process.env.VERCEL) {
+      throw new Error('MONGODB_URI environment variable is required on Vercel')
+    }
     memoryServer = await MongoMemoryServer.create()
     uri = memoryServer.getUri('mediaconnect')
     console.log('Using in-memory MongoDB (set MONGODB_URI for persistent DB)')
