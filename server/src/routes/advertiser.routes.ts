@@ -12,6 +12,7 @@ import { CustomQuote } from '../models/CustomQuote.js'
 import { newId } from '../utils/id.js'
 import { containsContactInfo, maskContactInfo } from '../utils/contact.js'
 import { serializeUser } from '../services/serializers.js'
+import { param } from '../utils/params.js'
 
 export const advertiserRouter = Router()
 advertiserRouter.use(requireAuth, requireRole('advertiser'))
@@ -41,7 +42,8 @@ advertiserRouter.put('/favorites', async (req: AuthRequest, res) => {
 advertiserRouter.post('/recently-viewed/:agencyId', async (req: AuthRequest, res) => {
   const user = await User.findById(req.auth!.sub)
   if (!user) return res.status(404).json({ error: 'Not found' })
-  const ids = [req.params.agencyId, ...(user.recentlyViewed ?? []).filter((id) => id !== req.params.agencyId)].slice(0, 20)
+  const agencyId = param(req.params.agencyId)
+  const ids = [agencyId, ...(user.recentlyViewed ?? []).filter((id) => id !== agencyId)].slice(0, 20)
   user.recentlyViewed = ids
   await user.save()
   res.json({ ok: true })
@@ -258,16 +260,17 @@ advertiserRouter.post('/reveal-contact/:agencyId', async (req: AuthRequest, res)
     revealedAgencyIds?: string[]
   }
   if (new Date(sub.expiresAt) < new Date()) return res.status(403).json({ error: 'Subscription expired' })
+  const agencyId = param(req.params.agencyId)
   const revealed = sub.revealedAgencyIds ?? []
-  if (revealed.includes(req.params.agencyId)) {
-    const agency = await Agency.findOne({ agencyId: req.params.agencyId })
+  if (revealed.includes(agencyId)) {
+    const agency = await Agency.findOne({ agencyId })
     return res.json({ email: agency?.businessEmail, phone: agency?.phone })
   }
   if (sub.contactViewsRemaining <= 0) return res.status(403).json({ error: 'No contact views remaining' })
   sub.contactViewsRemaining -= 1
-  sub.revealedAgencyIds = [...revealed, req.params.agencyId]
+  sub.revealedAgencyIds = [...revealed, agencyId]
   user.subscription = sub
   await user.save()
-  const agency = await Agency.findOne({ agencyId: req.params.agencyId })
+  const agency = await Agency.findOne({ agencyId })
   res.json({ email: agency?.businessEmail ?? '', phone: agency?.phone ?? '' })
 })

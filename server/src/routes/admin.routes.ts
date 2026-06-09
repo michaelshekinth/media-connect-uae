@@ -13,6 +13,7 @@ import { Notification } from '../models/Notification.js'
 import { newId } from '../utils/id.js'
 import { maskContactInfo } from '../utils/contact.js'
 import { serializeUser } from '../services/serializers.js'
+import { param } from '../utils/params.js'
 
 export const adminRouter = Router()
 adminRouter.use(requireAuth, requireRole('super_admin'))
@@ -129,7 +130,7 @@ adminRouter.post('/approve-profile/:agencyId', async (req: AuthRequest, res) => 
     body: 'Your company profile has been approved. You can now create listings.',
     link: '/owner/dashboard/listings',
   })
-  await audit(req.auth!.email, 'approve', 'profile', req.params.agencyId)
+  await audit(req.auth!.email, 'approve', 'profile', param(req.params.agencyId))
   res.json({ ok: true })
 })
 
@@ -137,7 +138,7 @@ adminRouter.post('/reject-profile/:agencyId', async (req: AuthRequest, res) => {
   const { reason } = req.body as { reason?: string }
   await User.updateOne({ agencyId: req.params.agencyId }, { ownerApprovalStatus: 'rejected' })
   await OwnerProfile.updateOne({ agencyId: req.params.agencyId }, { rejectionReason: reason })
-  await audit(req.auth!.email, 'reject', 'profile', req.params.agencyId, reason)
+  await audit(req.auth!.email, 'reject', 'profile', param(req.params.agencyId), reason)
   res.json({ ok: true })
 })
 
@@ -156,7 +157,7 @@ adminRouter.post('/approve-listing/:agencyId/:listingId', async (req: AuthReques
     { listingId: req.params.listingId, agencyId: req.params.agencyId },
     { status: 'approved', reviewedAt: new Date().toISOString() },
   )
-  await audit(req.auth!.email, 'approve', 'listing', req.params.listingId)
+  await audit(req.auth!.email, 'approve', 'listing', param(req.params.listingId))
   res.json({ ok: true })
 })
 
@@ -166,7 +167,7 @@ adminRouter.post('/reject-listing/:agencyId/:listingId', async (req: AuthRequest
     { listingId: req.params.listingId, agencyId: req.params.agencyId },
     { status: 'rejected', rejectionReason: reason, reviewedAt: new Date().toISOString() },
   )
-  await audit(req.auth!.email, 'reject', 'listing', req.params.listingId, reason)
+  await audit(req.auth!.email, 'reject', 'listing', param(req.params.listingId), reason)
   res.json({ ok: true })
 })
 

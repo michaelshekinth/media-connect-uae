@@ -1,0 +1,22 @@
+# Render Blueprint — https://render.com/docs/blueprint-spec
+# Deploy: Dashboard → New → Blueprint → connect GitHub repo
+# Or: https://render.com/deploy?repo=https://github.com/michaelshekinth/media-connect-uae
+
+services:
+  - type: web
+    name: media-connect-api
+    runtime: node
+    plan: free
+    region: singapore
+    buildCommand: npm install && npm run build:api
+    startCommand: npm run start:api
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_VERSION
+        value: '20'
+      - key: JWT_SECRET
+        generateValue: true
+      - key: MONGODB_URI
+        sync: false
+      - key: CORS_ORIGINS
+        value: https://media-connect-uae.vercel.app,https://media-owner.vercel.app,https://super-admin.vercel.app

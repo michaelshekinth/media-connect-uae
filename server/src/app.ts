@@ -1,5 +1,6 @@
 import express from 'express'
 import cors from 'cors'
+import { getCorsOrigins } from './config/cors.js'
 import { errorHandler } from './middleware/errorHandler.js'
 import { authRouter } from './routes/auth.routes.js'
 import { publicRouter } from './routes/public.routes.js'
@@ -9,7 +10,19 @@ import { adminRouter } from './routes/admin.routes.js'
 
 export function createApp() {
   const app = express()
-  app.use(cors())
+  const origins = getCorsOrigins()
+  app.use(
+    cors({
+      origin(origin, callback) {
+        if (!origin) return callback(null, true)
+        if (origins.includes(origin) || /^https:\/\/[\w.-]+\.vercel\.app$/.test(origin)) {
+          return callback(null, true)
+        }
+        callback(null, false)
+      },
+      credentials: true,
+    }),
+  )
   app.use(express.json({ limit: '10mb' }))
 
   app.get('/api/health', (_req, res) => res.json({ ok: true }))

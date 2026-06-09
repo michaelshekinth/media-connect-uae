@@ -12,6 +12,7 @@
     "seed": "tsx server/src/seed/seed.ts",
     "build": "tsc -b && vite build --config advertisers/vite.config.ts && vite build --config media-owner/vite.config.ts && vite build --config super-admin/vite.config.ts",
     "build:api": "tsc -p server/tsconfig.json",
+    "start:api": "node server/dist/index.js",
     "build:vercel": "vite build --config advertisers/vite.config.ts",
     "lint": "eslint .",
     "preview": "vite preview --config advertisers/vite.config.ts",

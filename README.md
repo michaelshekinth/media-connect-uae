@@ -83,33 +83,32 @@ VITE_MEDIA_OWNER_URL=http://localhost:5175
 VITE_ADMIN_URL=http://localhost:5174
 ```
 
-### Deploy to Vercel
+### Deploy API to Render (free tier)
+
+1. Create a free [MongoDB Atlas](https://www.mongodb.com/atlas) cluster and copy the connection string.
+2. Open [Deploy to Render](https://render.com/deploy?repo=https://github.com/michaelshekinth/media-connect-uae) (uses `render.yaml` in this repo).
+3. Set **`MONGODB_URI`** when prompted (`JWT_SECRET` is auto-generated).
+4. After deploy, your API URL will be **`https://media-connect-api.onrender.com`** (health: `/api/health`).
+
+> Render free services sleep after ~15 min idle; the first request after sleep may take 30–60s.
+
+### Deploy frontends to Vercel
 
 Create **three Vercel projects** from the same GitHub repo:
 
-| Vercel project | Root directory | Notes |
+| Vercel project | Root directory | Build |
 |----------------|----------------|-------|
-| `media-connect-uae` | `.` (repo root) | Advertisers + API (`/api/*`) |
-| `media-connect-uae-owner` | `media-owner` | Set `VITE_API_URL` to advertisers URL |
-| `media-connect-uae-admin` | `super-admin` | Set `VITE_API_URL` to advertisers URL |
+| `media-connect-uae` | `advertisers` | `vite build --config advertisers/vite.config.ts` |
+| `media-owner` | `media-owner` | `vite build --config media-owner/vite.config.ts` |
+| `super-admin` | `super-admin` | `vite build --config super-admin/vite.config.ts` |
 
-**Required env vars** (advertisers / API project):
+**All three frontends** need this env var:
 
-- `MONGODB_URI` — MongoDB Atlas connection string
-- `JWT_SECRET` — strong random secret
-
-**Media owner & super admin projects** also need:
-
-- `VITE_API_URL` — e.g. `https://media-connect-uae.vercel.app` (no trailing slash)
-
-CLI deploy (from repo root):
-
-```bash
-npx vercel link
-npx vercel env add MONGODB_URI
-npx vercel env add JWT_SECRET
-npx vercel --prod
+```env
+VITE_API_URL=https://media-connect-api.onrender.com
 ```
+
+(No trailing slash — points to the Render API.)
 
 ### Scripts
 
