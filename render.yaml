@@ -8,9 +8,12 @@ services:
     runtime: node
     plan: free
     region: singapore
+    repo: https://github.com/michaelshekinth/media-connect-uae.git
+    branch: main
     buildCommand: npm install && npm run build:api
     startCommand: npm run start:api
     healthCheckPath: /api/health
+    autoDeploy: true
     envVars:
       - key: NODE_VERSION
         value: '20'
