@@ -1,0 +1,46 @@
+import mongoose, { Schema } from 'mongoose'
+
+const listingSchema = new Schema(
+  {
+    listingId: { type: String, required: true, unique: true },
+    agencyId: { type: String, required: true, index: true },
+    agencyName: { type: String, default: '' },
+    title: { type: String, required: true },
+    mediaCategory: { type: String, default: 'OOH/DOOH' },
+    mediaType: { type: String, required: true },
+    subcategory: { type: String, default: '' },
+    city: { type: String, default: 'Dubai' },
+    area: { type: String, default: '' },
+    landmark: { type: String, default: '' },
+    sizeWidth: { type: String, default: '' },
+    sizeHeight: { type: String, default: '' },
+    sizeUnit: { type: String, default: 'm' },
+    pricingType: { type: String, default: 'range' },
+    priceMin: { type: Number, default: 0 },
+    priceMax: { type: Number, default: 0 },
+    billingDuration: { type: String, default: 'per_month' },
+    availability: { type: String, default: 'immediate' },
+    descriptionShort: { type: String, default: '' },
+    descriptionLong: { type: String, default: '' },
+    imageUrl: { type: String, default: '' },
+    galleryImages: { type: [String], default: [] },
+    deliverables: { type: [String], default: [] },
+    isDirectMedia: { type: Boolean, default: false },
+    lat: { type: Number, default: 25.2048 },
+    lng: { type: Number, default: 55.2708 },
+    status: {
+      type: String,
+      enum: ['draft', 'pending_approval', 'approved', 'rejected', 'archived'],
+      default: 'draft',
+    },
+    rejectionReason: { type: String, default: null },
+    submittedAt: { type: String, default: null },
+    reviewedAt: { type: String, default: null },
+    documents: { type: [Schema.Types.Mixed], default: [] },
+    rating: { type: Number, default: 4.5 },
+    format: { type: String, default: 'billboard' },
+  },
+  { timestamps: true },
+)
+
+export const Listing = mongoose.model('Listing', listingSchema)
