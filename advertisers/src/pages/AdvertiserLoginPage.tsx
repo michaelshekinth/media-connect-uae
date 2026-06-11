@@ -2,7 +2,7 @@ import { Megaphone } from 'lucide-react'
 import { useState } from 'react'
 import { Link, Navigate, useLocation } from 'react-router-dom'
 import { clearPendingRedirect, getPendingRedirect } from '../components/auth/ProtectedRoute'
-import { ADMIN_LOGIN_URL, MEDIA_OWNER_LOGIN_URL } from '@shared/constants/portals'
+import { MEDIA_OWNER_LOGIN_URL } from '@shared/constants/portals'
 import { useAuth } from '../context/AuthContext'
 
 export function AdvertiserLoginPage() {
@@ -142,10 +142,6 @@ export function AdvertiserLoginPage() {
           <p>
             Media owner?{' '}
             <a href={MEDIA_OWNER_LOGIN_URL} className="font-medium text-amber-700 hover:underline">Media owner login</a>
-          </p>
-          <p>
-            Platform admin?{' '}
-            <a href={ADMIN_LOGIN_URL} className="font-medium text-slate-800 hover:underline">Super admin login</a>
           </p>
         </div>
       </div>

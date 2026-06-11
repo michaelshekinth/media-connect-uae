@@ -7,13 +7,11 @@ import {
   Megaphone,
   Menu,
   Search,
-  Shield,
   User,
   X,
 } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import { ADMIN_LOGIN_URL } from '@shared/constants/portals'
 import { useAuth } from '../../context/AuthContext'
 import {
   getPendingQuoteCount,
@@ -51,7 +49,6 @@ export function Header({ variant = 'landing' }: HeaderProps) {
   const [mobileNavOpen, setMobileNavOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
   const isLanding = variant === 'landing' && location.pathname === '/'
-  const showAdminLink = location.pathname !== '/'
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 16)
@@ -114,11 +111,6 @@ export function Header({ variant = 'landing' }: HeaderProps) {
         <span className="hidden sm:inline">Advertiser login</span>
         <span className="sm:hidden">Login</span>
       </Link>
-      {showAdminLink && (
-        <a href={ADMIN_LOGIN_URL} className={`${navBtnClass(glass)} hidden lg:inline-flex gap-1`}>
-          <Shield className="h-3.5 w-3.5 shrink-0" /> Admin
-        </a>
-      )}
       <Link to="/signup" className={navBtnClass(glass, 'primary')}>
         Sign up
       </Link>
@@ -137,15 +129,6 @@ export function Header({ variant = 'landing' }: HeaderProps) {
       <Link to="/login" className={`${navBtnClass(true)} w-full justify-start`} onClick={() => setMobileNavOpen(false)}>
         Advertiser login
       </Link>
-      {showAdminLink && (
-        <a
-          href={ADMIN_LOGIN_URL}
-          className={`${navBtnClass(true)} w-full justify-start gap-2`}
-          onClick={() => setMobileNavOpen(false)}
-        >
-          <Shield className="h-4 w-4 shrink-0" /> Super admin
-        </a>
-      )}
       <Link
         to="/signup"
         className={`${navBtnClass(true, 'primary')} mt-1 w-full`}

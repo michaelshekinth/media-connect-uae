@@ -2,7 +2,6 @@ import { Building2 } from 'lucide-react'
 import { useState } from 'react'
 import { Link, Navigate, useLocation } from 'react-router-dom'
 import {
-  ADMIN_LOGIN_URL,
   ADVERTISER_LOGIN_URL,
 } from '@shared/constants/portals'
 import { useOwnerAuth } from '../../context/OwnerAuthContext'
@@ -108,10 +107,6 @@ export function OwnerLoginPage() {
           <p>
             Advertiser?{' '}
             <a href={ADVERTISER_LOGIN_URL} className="font-medium text-indigo-600 hover:underline">Advertiser login</a>
-          </p>
-          <p>
-            Platform admin?{' '}
-            <a href={ADMIN_LOGIN_URL} className="font-medium text-slate-800 hover:underline">Super admin login</a>
           </p>
         </div>
       </div>

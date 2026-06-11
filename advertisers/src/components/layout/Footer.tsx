@@ -1,7 +1,7 @@
 import { Megaphone } from 'lucide-react'
-import { Link, useLocation } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { MEDIA_CATEGORIES, MEDIA_CATEGORY_LABELS, UAE_CITIES } from '@shared/constants'
-import { ADMIN_LOGIN_URL, MEDIA_OWNER_LOGIN_URL } from '@shared/constants/portals'
+import { MEDIA_OWNER_LOGIN_URL } from '@shared/constants/portals'
 
 const platformLinks = [
   { label: 'Browse Media', href: '#search' },
@@ -38,7 +38,6 @@ function FooterLinkList({
 }
 
 export function Footer() {
-  const isLanding = useLocation().pathname === '/'
 
   return (
     <footer className="border-t border-slate-200 bg-slate-900 text-slate-300">
@@ -73,13 +72,6 @@ export function Footer() {
                   Media owner
                 </a>
               </li>
-              {!isLanding && (
-                <li>
-                  <a href={ADMIN_LOGIN_URL} className="text-sm text-slate-400 transition-colors hover:text-orange-400">
-                    Super admin
-                  </a>
-                </li>
-              )}
             </ul>
           </div>
 
