@@ -62,6 +62,14 @@ export function BrowsePage() {
     const next = new URLSearchParams(searchParams)
     if (cat === 'all') next.delete('category')
     else next.set('category', cat)
+    next.delete('subcategory')
+    setSearchParams(next)
+  }
+
+  const setSubcategory = (sub: string) => {
+    const next = new URLSearchParams(searchParams)
+    if (sub === 'all') next.delete('subcategory')
+    else next.set('subcategory', sub)
     setSearchParams(next)
   }
 
@@ -86,7 +94,12 @@ export function BrowsePage() {
 
   return (
     <div>
-      <CategoryFilterBar active={category} onChange={setCategory} />
+      <CategoryFilterBar
+        active={category}
+        subcategory={filters.subcategory}
+        onChange={setCategory}
+        onSubcategoryChange={setSubcategory}
+      />
 
       <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
         <div className="mb-6 flex flex-wrap items-end justify-between gap-4">

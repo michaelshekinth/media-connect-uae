@@ -36,12 +36,12 @@ export function OwnerLayout() {
     <div className="min-h-screen bg-slate-50">
       <header className="fixed top-0 right-0 left-0 z-50 border-b border-slate-200 bg-white shadow-sm">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
-          <Link to="/dashboard" className="flex items-center gap-2">
+          <Link to="/dashboard/chats" className="flex items-center gap-2">
             <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-900">
               <Building2 className="h-5 w-5 text-white" />
             </div>
             <div>
-              <span className="text-lg font-bold text-slate-900">Media Owner</span>
+              <span className="text-lg font-bold text-slate-900">Publisher</span>
               {user?.companyName && (
                 <p className="text-xs text-slate-500">{user.companyName}</p>
               )}
@@ -80,6 +80,10 @@ export function OwnerLayout() {
                   <button type="button" onClick={() => { setMenuOpen(false); navigate('/dashboard/company-profile') }}
                     className="flex w-full px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50">
                     Company profile
+                  </button>
+                  <button type="button" onClick={() => { setMenuOpen(false); navigate('/purchases') }}
+                    className="flex w-full px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50">
+                    Purchases & upgrades
                   </button>
                   <button type="button" onClick={() => { setMenuOpen(false); logout() }}
                     className="flex w-full items-center gap-2 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50">

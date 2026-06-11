@@ -11,6 +11,11 @@ import { Agency } from '../models/Agency.js'
 import { newId } from '../utils/id.js'
 import { containsContactInfo, maskContactInfo } from '../utils/contact.js'
 import { serializeUser } from '../services/serializers.js'
+import { isValidLeadStatus, normalizeLeadStatus } from '../utils/quoteStatus.js'
+import { recordRevenueEntry } from '../services/revenueService.js'
+import { queueEmail } from '../services/emailService.js'
+import { pickListingFields, resolveCreateListingStatus } from '../utils/listingFields.js'
+import { pickUserProfile } from '../utils/userFields.js'
 
 export const ownerRouter = Router()
 ownerRouter.use(requireAuth, requireRole('media_owner'))
@@ -26,7 +31,8 @@ ownerRouter.get('/profile', async (req: AuthRequest, res) => {
 })
 
 ownerRouter.patch('/profile', async (req: AuthRequest, res) => {
-  const user = await User.findByIdAndUpdate(req.auth!.sub, { $set: req.body }, { new: true })
+  const updates = pickUserProfile(req.body as Record<string, unknown>)
+  const user = await User.findByIdAndUpdate(req.auth!.sub, { $set: updates }, { new: true })
   if (!user) return res.status(404).json({ error: 'Not found' })
   res.json(serializeUser(user))
 })
@@ -77,14 +83,27 @@ ownerRouter.get('/listings/:id', async (req: AuthRequest, res) => {
 })
 
 ownerRouter.post('/listings', async (req: AuthRequest, res) => {
+  const aid = agencyId(req)
+  const title = (req.body as { title?: string }).title
+  if (title) {
+    const recent = await Listing.findOne({
+      agencyId: aid,
+      title,
+      createdAt: { $gte: new Date(Date.now() - 5000) },
+    })
+    if (recent) {
+      return res.status(200).json({ ...recent.toObject(), id: recent.listingId })
+    }
+  }
   const user = await User.findById(req.auth!.sub)
   const listingId = newId('listing_')
+  const fields = pickListingFields(req.body as Record<string, unknown>)
   const listing = await Listing.create({
     listingId,
-    agencyId: agencyId(req),
+    agencyId: aid,
     agencyName: user?.companyName ?? '',
-    ...req.body,
-    status: req.body.status ?? 'draft',
+    ...fields,
+    status: resolveCreateListingStatus((req.body as { status?: string }).status),
   })
   res.status(201).json({ ...listing.toObject(), id: listing.listingId })
 })
@@ -93,15 +112,10 @@ ownerRouter.put('/listings/:id', async (req: AuthRequest, res) => {
   const existing = await Listing.findOne({ listingId: req.params.id, agencyId: agencyId(req) })
   if (!existing) return res.status(404).json({ error: 'Not found' })
 
-  const body = { ...req.body } as Record<string, unknown>
-  delete body.id
-  delete body.listingId
-  delete body.agencyId
-  delete body.createdAt
-
-  const updates: Record<string, unknown> = { ...body }
+  const updates: Record<string, unknown> = pickListingFields(req.body as Record<string, unknown>)
   if (existing.status === 'approved') {
-    updates.status = 'pending_approval'
+    updates.status = 'pending_edit_approval'
+    updates.submissionType = 'edit'
     updates.submittedAt = new Date().toISOString()
     updates.reviewedAt = null
   }
@@ -121,6 +135,16 @@ ownerRouter.delete('/listings/:id', async (req: AuthRequest, res) => {
   res.status(204).send()
 })
 
+ownerRouter.post('/listings/:id/delist', async (req: AuthRequest, res) => {
+  const listing = await Listing.findOneAndUpdate(
+    { listingId: req.params.id, agencyId: agencyId(req) },
+    { status: 'archived', delistedAt: new Date().toISOString() },
+    { new: true },
+  )
+  if (!listing) return res.status(404).json({ error: 'Not found' })
+  res.json({ ...listing.toObject(), id: listing.listingId })
+})
+
 ownerRouter.post('/listings/:id/submit', async (req: AuthRequest, res) => {
   const listing = await Listing.findOneAndUpdate(
     { listingId: req.params.id, agencyId: agencyId(req) },
@@ -133,7 +157,43 @@ ownerRouter.post('/listings/:id/submit', async (req: AuthRequest, res) => {
 
 ownerRouter.get('/leads', async (req: AuthRequest, res) => {
   const leads = await QuoteRequest.find({ agencyId: agencyId(req) }).sort({ createdAt: -1 })
-  res.json(leads.map((l) => ({ ...l.toObject(), id: l.quoteId })))
+  res.json(
+    leads.map((l) => ({
+      ...l.toObject(),
+      id: l.quoteId,
+      status: normalizeLeadStatus(l.status),
+    })),
+  )
+})
+
+ownerRouter.patch('/leads/:id/status', async (req: AuthRequest, res) => {
+  const { status, convertedAmount } = req.body as { status?: string; convertedAmount?: number }
+  if (!status || !isValidLeadStatus(status)) {
+    return res.status(400).json({ error: 'Valid status required: connected|quoted|converted|lost' })
+  }
+  const quote = await QuoteRequest.findOne({ quoteId: req.params.id, agencyId: agencyId(req) })
+  if (!quote) return res.status(404).json({ error: 'Not found' })
+  quote.status = status
+  if (convertedAmount !== undefined) quote.convertedAmount = convertedAmount
+  await quote.save()
+
+  if (status === 'converted' && convertedAmount) {
+    const pricing = await import('../models/PublisherPricingModel.js').then((m) =>
+      m.PublisherPricingModel.findOne({ agencyId: agencyId(req) }),
+    )
+    if (pricing?.commission?.active && pricing.commission.rate) {
+      const amount = (convertedAmount * pricing.commission.rate) / 100
+      await recordRevenueEntry({
+        agencyId: agencyId(req),
+        modelType: 'commission',
+        amount,
+        sourceId: quote.quoteId,
+        notes: `Commission on converted lead`,
+      })
+    }
+  }
+
+  res.json({ ...quote.toObject(), id: quote.quoteId, status: normalizeLeadStatus(quote.status) })
 })
 
 ownerRouter.get('/chats', async (req: AuthRequest, res) => {
@@ -181,6 +241,16 @@ ownerRouter.post('/chats/:threadId/messages', async (req: AuthRequest, res) => {
     body: `${thread.agencyName}: ${masked.slice(0, 60)}`,
     link: '/dashboard/chats',
   })
+  const advertiser = await User.findById(thread.advertiserId)
+  if (advertiser?.email) {
+    const advUrl = process.env.ADVERTISER_URL ?? 'https://media-connect-uae.vercel.app'
+    await queueEmail({
+      templateId: 'owner_message',
+      to: advertiser.email,
+      subject: `New message from ${thread.agencyName}`,
+      body: `${thread.agencyName} sent you a message.\n\nReply: ${advUrl}/dashboard/chats`,
+    })
+  }
   res.json({ ok: true })
 })
 
@@ -209,7 +279,10 @@ ownerRouter.post('/custom-quotes', async (req: AuthRequest, res) => {
     description: maskedDesc,
     status: 'sent',
   })
-  await QuoteRequest.updateOne({ quoteId: body.quoteRequestId }, { status: 'responded', quotedAmount: body.amountAed, quotedDescription: maskedDesc, customQuoteId })
+  await QuoteRequest.updateOne(
+    { quoteId: body.quoteRequestId },
+    { status: 'quoted', quotedAmount: body.amountAed, quotedDescription: maskedDesc, customQuoteId },
+  )
   const thread = await ChatThread.findOne({ threadId: body.threadId })
   if (thread) {
     thread.messages.push({
@@ -232,6 +305,16 @@ ownerRouter.post('/custom-quotes', async (req: AuthRequest, res) => {
     body: `You received a custom quote of ${Number(body.amountAed).toLocaleString()} AED`,
     link: '/dashboard/quotes',
   })
+  const advertiser = await User.findById(String(body.advertiserId))
+  if (advertiser?.email) {
+    const advUrl = process.env.ADVERTISER_URL ?? 'https://media-connect-uae.vercel.app'
+    await queueEmail({
+      templateId: 'custom_quote',
+      to: advertiser.email,
+      subject: 'Custom quote received',
+      body: `You received a quote of ${Number(body.amountAed).toLocaleString()} AED.\n\nView: ${advUrl}/dashboard/quotes`,
+    })
+  }
   res.status(201).json({ ...quote.toObject(), id: quote.customQuoteId })
 })
 

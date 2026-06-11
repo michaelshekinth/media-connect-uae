@@ -29,7 +29,7 @@ export function AdminLoginPage() {
           <Shield className="h-8 w-8 text-amber-400" />
           <div>
             <h1 className="text-xl font-bold text-white">Super Admin</h1>
-            <p className="text-xs text-slate-400">Platform control — not advertiser or media owner login</p>
+            <p className="text-xs text-slate-400">Platform control — not advertiser or publisher login</p>
           </div>
         </div>
         <label className="block text-sm text-slate-400">Email</label>

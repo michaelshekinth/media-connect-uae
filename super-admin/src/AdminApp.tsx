@@ -17,6 +17,7 @@ import { ListingsPage } from './pages/ListingsPage'
 import { MediaOwnerDetailPage } from './pages/MediaOwnerDetailPage'
 import { MediaOwnersPage } from './pages/MediaOwnersPage'
 import { NotificationsPage } from './pages/NotificationsPage'
+import { PermitAssistancePage } from './pages/PermitAssistancePage'
 import { QuotesPage } from './pages/QuotesPage'
 import { ReportsPage } from './pages/ReportsPage'
 import { RfqPage } from './pages/RfqPage'
@@ -51,6 +52,7 @@ export default function AdminApp() {
           <Route path="cms" element={<CmsPage />} />
           <Route path="email-templates" element={<EmailTemplatesPage />} />
           <Route path="reports" element={<ReportsPage />} />
+          <Route path="permit-assistance" element={<PermitAssistancePage />} />
           <Route path="settings" element={<SettingsPage />} />
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />

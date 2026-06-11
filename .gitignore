@@ -26,3 +26,6 @@ dist-ssr
 *.sln
 *.sw?
 .vercel
+.cursor/*.log
+playwright-report
+test-results

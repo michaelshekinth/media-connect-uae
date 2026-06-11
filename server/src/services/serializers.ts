@@ -14,6 +14,7 @@ export function serializeUser(u: UserDoc) {
     quoteAlerts: u.quoteAlerts,
     createdAt: u.createdAt.toISOString(),
     role: u.role,
+    roleLabel: u.role === 'media_owner' ? 'publisher' : u.role,
     agencyId: u.agencyId ?? undefined,
     ownerProfileComplete: u.ownerProfileComplete ?? undefined,
     ownerApprovalStatus: u.ownerApprovalStatus ?? undefined,
@@ -55,12 +56,16 @@ type ListingDoc = {
   createdAt?: Date
 }
 
-export function listingToPublic(l: ListingDoc) {
+export function listingToPublic(l: ListingDoc & Record<string, unknown>) {
   return {
     id: l.listingId,
     title: l.title,
     mediaType: l.mediaType,
+    subcategory: (l.subcategory as string) ?? '',
+    mediaCategory: (l.mediaCategory as string) ?? l.mediaType,
     city: l.city,
+    emirate: (l.emirate as string) ?? l.city,
+    assetOwnership: (l.assetOwnership as string) ?? null,
     budgetMin: l.priceMin,
     budgetMax: l.priceMax,
     imageUrl: l.imageUrl,
@@ -78,11 +83,15 @@ export function listingToPublic(l: ListingDoc) {
   }
 }
 
-export function listingToDetail(l: ListingDoc) {
+export function listingToDetail(l: ListingDoc & Record<string, unknown>) {
   return {
     ...listingToPublic(l),
     subcategory: l.subcategory ?? '',
     mediaCategory: l.mediaCategory ?? l.mediaType,
+    aboutPlacement: (l.aboutPlacement as string) ?? l.descriptionLong ?? l.descriptionShort ?? '',
+    objectives: (l.objectives as string[]) ?? [],
+    oohType: (l.oohType as string) ?? '',
+    mediaTypeDetail: (l.mediaTypeDetail as string) ?? '',
     area: l.area ?? '',
     landmark: l.landmark ?? '',
     sizeWidth: l.sizeWidth ?? '',

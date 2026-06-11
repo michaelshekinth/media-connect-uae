@@ -1,4 +1,4 @@
-import { createBrowserRouter, Outlet } from 'react-router-dom'
+import { createBrowserRouter, Navigate, Outlet } from 'react-router-dom'
 import { OwnerProtectedRoute } from './components/OwnerProtectedRoute'
 import { OwnerAuthProvider } from './context/OwnerAuthContext'
 import { OwnerLayout } from './layouts/OwnerLayout'
@@ -8,6 +8,7 @@ import { ListingDetailPage } from './pages/owner/ListingDetailPage'
 import { OwnerDashboardPage } from './pages/owner/OwnerDashboardPage'
 import { OwnerLoginPage } from './pages/owner/OwnerLoginPage'
 import { OwnerOnboardingPage } from './pages/owner/OwnerOnboardingPage'
+import { OwnerPurchasesPage } from './pages/owner/OwnerPurchasesPage'
 import { NotFoundPage } from './pages/NotFoundPage'
 
 function Root() {
@@ -32,8 +33,9 @@ export const router = createBrowserRouter([
         ),
         children: [
           { path: 'onboarding', element: <OwnerOnboardingPage /> },
-          { path: 'dashboard', element: <OwnerDashboardPage /> },
+          { path: 'dashboard', element: <Navigate to="/dashboard/chats" replace /> },
           { path: 'dashboard/:tab', element: <OwnerDashboardPage /> },
+          { path: 'purchases', element: <OwnerPurchasesPage /> },
           { path: 'listings/new', element: <CreateListingPage /> },
           { path: 'listings/:id/edit', element: <EditListingPage /> },
           { path: 'listings/:id', element: <ListingDetailPage /> },

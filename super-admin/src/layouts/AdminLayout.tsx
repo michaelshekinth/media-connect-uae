@@ -10,7 +10,7 @@ const nav = [
   { to: '/', icon: LayoutDashboard, label: 'Dashboard' },
   { to: '/approvals', icon: Shield, label: 'Pending Approvals' },
   { to: '/users', icon: Users, label: 'Advertisers' },
-  { to: '/media-owners', icon: Building2, label: 'Media Owners' },
+  { to: '/media-owners', icon: Building2, label: 'Publishers' },
   { to: '/listings', icon: List, label: 'Listings' },
   { to: '/rfq', icon: Receipt, label: 'RFQ / Leads' },
   { to: '/chats', icon: MessageSquare, label: 'Chats' },
@@ -24,6 +24,7 @@ const nav = [
   { to: '/cms', icon: FileText, label: 'CMS' },
   { to: '/email-templates', icon: Mail, label: 'Email Templates' },
   { to: '/reports', icon: BarChart3, label: 'Reports' },
+  { to: '/permit-assistance', icon: Shield, label: 'Permit Assistance' },
   { to: '/settings', icon: Settings, label: 'Settings' },
 ]
 

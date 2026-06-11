@@ -27,7 +27,7 @@ function postLoginNavigate(user: User, navigate: ReturnType<typeof useNavigate>)
   if (!user.ownerProfileComplete) {
     navigate('/onboarding')
   } else {
-    navigate('/dashboard')
+    navigate('/dashboard/chats')
   }
 }
 

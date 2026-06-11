@@ -14,6 +14,9 @@ import { newId } from '../utils/id.js'
 import { maskContactInfo } from '../utils/contact.js'
 import { serializeUser } from '../services/serializers.js'
 import { param } from '../utils/params.js'
+import { queueEmail } from '../services/emailService.js'
+import { normalizeLeadStatus } from '../utils/quoteStatus.js'
+import { pickAdminConfig, pickAdminUserPatch } from '../utils/userFields.js'
 
 export const adminRouter = Router()
 adminRouter.use(requireAuth, requireRole('super_admin'))
@@ -54,7 +57,8 @@ adminRouter.get('/users/:id', async (req, res) => {
 })
 
 adminRouter.patch('/users/:id', async (req, res) => {
-  const user = await User.findByIdAndUpdate(req.params.id, { $set: req.body }, { new: true })
+  const updates = pickAdminUserPatch(req.body as Record<string, unknown>)
+  const user = await User.findByIdAndUpdate(req.params.id, { $set: updates }, { new: true })
   if (!user) return res.status(404).json({ error: 'Not found' })
   res.json(serializeUser(user))
 })
@@ -155,9 +159,19 @@ adminRouter.get('/listings', async (req, res) => {
 adminRouter.post('/approve-listing/:agencyId/:listingId', async (req: AuthRequest, res) => {
   await Listing.updateOne(
     { listingId: req.params.listingId, agencyId: req.params.agencyId },
-    { status: 'approved', reviewedAt: new Date().toISOString() },
+    { status: 'approved', reviewedAt: new Date().toISOString(), submissionType: 'create' },
   )
   await audit(req.auth!.email, 'approve', 'listing', param(req.params.listingId))
+  const owner = await User.findOne({ agencyId: req.params.agencyId, role: 'media_owner' })
+  if (owner?.email) {
+    const ownerUrl = process.env.MEDIA_OWNER_URL ?? 'https://media-owner.vercel.app'
+    await queueEmail({
+      templateId: 'listing_approved',
+      to: owner.email,
+      subject: 'Listing approved',
+      body: `Your listing was approved.\n\nView: ${ownerUrl}/owner/dashboard/listings`,
+    })
+  }
   res.json({ ok: true })
 })
 
@@ -168,6 +182,15 @@ adminRouter.post('/reject-listing/:agencyId/:listingId', async (req: AuthRequest
     { status: 'rejected', rejectionReason: reason, reviewedAt: new Date().toISOString() },
   )
   await audit(req.auth!.email, 'reject', 'listing', param(req.params.listingId), reason)
+  const owner = await User.findOne({ agencyId: req.params.agencyId, role: 'media_owner' })
+  if (owner?.email) {
+    await queueEmail({
+      templateId: 'listing_rejected',
+      to: owner.email,
+      subject: 'Listing needs changes',
+      body: `Your listing was not approved.\n\nReason: ${reason ?? 'See admin notes'}`,
+    })
+  }
   res.json({ ok: true })
 })
 
@@ -175,7 +198,14 @@ adminRouter.get('/rfqs', async (_req, res) => {
   const rfqs = await QuoteRequest.find().sort({ createdAt: -1 })
   const owners = await User.find({ role: 'media_owner' })
   const nameMap = Object.fromEntries(owners.map((u) => [u.agencyId, u.companyName]))
-  res.json(rfqs.map((r) => ({ ...r.toObject(), id: r.quoteId, ownerName: nameMap[r.agencyId] ?? r.agencyId })))
+  res.json(
+    rfqs.map((r) => ({
+      ...r.toObject(),
+      id: r.quoteId,
+      ownerName: nameMap[r.agencyId] ?? r.agencyId,
+      status: normalizeLeadStatus(r.status),
+    })),
+  )
 })
 
 adminRouter.get('/quotes', async (_req, res) => {
@@ -209,7 +239,8 @@ adminRouter.get('/config', async (_req, res) => {
 })
 
 adminRouter.put('/config', async (req: AuthRequest, res) => {
-  const config = await AdminConfig.findOneAndUpdate({ key: 'platform' }, { $set: req.body }, { new: true, upsert: true })
+  const updates = pickAdminConfig(req.body as Record<string, unknown>)
+  const config = await AdminConfig.findOneAndUpdate({ key: 'platform' }, { $set: updates }, { new: true, upsert: true })
   await audit(req.auth!.email, 'update', 'config', 'platform')
   res.json(config)
 })

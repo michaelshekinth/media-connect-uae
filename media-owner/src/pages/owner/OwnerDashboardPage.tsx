@@ -1,4 +1,4 @@
-import { Pencil, Plus, Trash2 } from 'lucide-react'
+import { EyeOff, Pencil, Plus, Trash2 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { ApprovalGate } from '../../components/owner/ApprovalGate'
@@ -8,23 +8,28 @@ import { OwnerNotifications } from '../../components/owner/OwnerNotifications'
 import { OverviewCharts } from '../../components/owner/OverviewCharts'
 import { useOwnerAuth } from '../../context/OwnerAuthContext'
 import {
+  delistOwnerListing,
   getCompanyProfile,
   getCustomQuotes,
   getInboundLeads,
   deleteOwnerListing,
+  getOwnerFeatures,
   getOwnerListings,
   getOwnerStats,
+  revealAdvertiserContact,
   saveCompanyProfile,
+  updateLeadStatus,
+  type OwnerFeatures,
 } from '../../services/ownerStore'
 import { syncLicenseFromDocuments } from '../../utils/ownerDocuments'
-import { MEDIA_TYPES, UAE_CITIES } from '@shared/constants'
-import type { OwnerDashboardTab, OwnerCompanyProfile } from '@shared/types/owner'
+import { MEDIA_CATEGORIES, MEDIA_CATEGORY_LABELS, UAE_CITIES } from '@shared/constants'
+import type { OwnerDashboardTab, OwnerCompanyProfile, LeadStatus } from '@shared/types/owner'
 
 const tabs: { id: OwnerDashboardTab; label: string }[] = [
+  { id: 'chats', label: 'Chats' },
   { id: 'overview', label: 'Overview' },
   { id: 'listings', label: 'Listings' },
   { id: 'leads', label: 'Leads' },
-  { id: 'chats', label: 'Chats' },
   { id: 'quotes-sent', label: 'Quotes Sent' },
   { id: 'notifications', label: 'Notifications' },
   { id: 'company-profile', label: 'Company Profile' },
@@ -34,11 +39,21 @@ const statusBadge: Record<string, string> = {
   pending_approval: 'bg-amber-100 text-amber-800',
   approved: 'bg-emerald-100 text-emerald-800',
   rejected: 'bg-red-100 text-red-800',
-  pending: 'bg-amber-100 text-amber-800',
-  responded: 'bg-blue-100 text-blue-800',
+  archived: 'bg-slate-100 text-slate-700',
+  connected: 'bg-blue-100 text-blue-800',
+  quoted: 'bg-indigo-100 text-indigo-800',
+  converted: 'bg-emerald-100 text-emerald-800',
+  lost: 'bg-red-100 text-red-800',
   sent: 'bg-blue-100 text-blue-800',
   accepted: 'bg-emerald-100 text-emerald-800',
 }
+
+const LEAD_STATUS_OPTIONS: { value: LeadStatus; label: string }[] = [
+  { value: 'connected', label: 'Connected' },
+  { value: 'quoted', label: 'Quoted' },
+  { value: 'converted', label: 'Converted' },
+  { value: 'lost', label: 'Lost' },
+]
 
 export function OwnerDashboardPage() {
   const { tab } = useParams<{ tab?: string }>()
@@ -47,11 +62,13 @@ export function OwnerDashboardPage() {
   const [days, setDays] = useState(30)
   const [profile, setProfile] = useState<OwnerCompanyProfile | null>(null)
   const [stats, setStats] = useState<Awaited<ReturnType<typeof getOwnerStats>> | null>(null)
+  const [features, setFeatures] = useState<OwnerFeatures | null>(null)
   const [listings, setListings] = useState<Awaited<ReturnType<typeof getOwnerListings>>>([])
   const [leads, setLeads] = useState<Awaited<ReturnType<typeof getInboundLeads>>>([])
   const [quotes, setQuotes] = useState<Awaited<ReturnType<typeof getCustomQuotes>>>([])
+  const [revealedContacts, setRevealedContacts] = useState<Record<string, { name: string; email: string }>>({})
 
-  const activeTab = (tabs.find((t) => t.id === tab)?.id ?? 'overview') as OwnerDashboardTab
+  const activeTab = (tabs.find((t) => t.id === tab)?.id ?? 'chats') as OwnerDashboardTab
   const agencyId = user?.agencyId ?? ''
   const approved = user?.ownerApprovalStatus === 'approved'
   const pending = user?.ownerApprovalStatus === 'submitted'
@@ -60,13 +77,20 @@ export function OwnerDashboardPage() {
   useEffect(() => {
     if (!agencyId) return
     getOwnerStats(agencyId, days).then(setStats).catch(() => setStats(null))
+    getOwnerFeatures(agencyId).then(setFeatures).catch(() => setFeatures(null))
     getOwnerListings(agencyId).then(setListings).catch(() => setListings([]))
     getInboundLeads(agencyId).then(setLeads).catch(() => setLeads([]))
     getCustomQuotes(agencyId).then(setQuotes).catch(() => setQuotes([]))
   }, [agencyId, days])
 
+  useEffect(() => {
+    if (!tab) {
+      navigate('/dashboard/chats', { replace: true })
+    }
+  }, [tab, navigate])
+
   const setTab = (id: OwnerDashboardTab) => {
-    navigate(id === 'overview' ? '/dashboard' : `/dashboard/${id}`)
+    navigate(`/dashboard/${id}`)
   }
 
   const handleDeleteListing = async (listingId: string, title: string) => {
@@ -78,6 +102,45 @@ export function OwnerDashboardPage() {
       setListings((prev) => prev.filter((l) => l.id !== listingId))
     } catch {
       window.alert('Could not delete listing. Please try again.')
+    }
+  }
+
+  const handleDelistListing = async (listingId: string, title: string) => {
+    if (!agencyId) return
+    const confirmed = window.confirm(`Delist "${title}"? It will be removed from the marketplace.`)
+    if (!confirmed) return
+    try {
+      const updated = await delistOwnerListing(agencyId, listingId)
+      setListings((prev) => prev.map((l) => (l.id === listingId ? { ...l, ...updated, status: 'archived' } : l)))
+    } catch {
+      window.alert('Could not delist listing. Please try again.')
+    }
+  }
+
+  const handleLeadStatus = async (leadId: string, status: LeadStatus) => {
+    if (!agencyId) return
+    let convertedAmount: number | undefined
+    if (status === 'converted') {
+      const raw = window.prompt('Converted deal amount (AED), optional:')
+      if (raw) convertedAmount = Number(raw) || undefined
+    }
+    try {
+      await updateLeadStatus(agencyId, leadId, status, convertedAmount)
+      setLeads((prev) => prev.map((l) => (l.id === leadId ? { ...l, status, convertedAmount } : l)))
+    } catch {
+      window.alert('Could not update lead status.')
+    }
+  }
+
+  const handleRevealContact = async (leadId: string, quoteId: string) => {
+    if (!agencyId) return
+    try {
+      const contact = await revealAdvertiserContact(agencyId, quoteId)
+      setRevealedContacts((prev) => ({ ...prev, [leadId]: { name: contact.advertiserName, email: contact.advertiserEmail } }))
+      setLeads((prev) => prev.map((l) => (l.id === leadId ? { ...l, contactViewedAt: new Date().toISOString() } : l)))
+      getOwnerFeatures(agencyId).then(setFeatures).catch(() => {})
+    } catch (e) {
+      window.alert(e instanceof Error ? e.message : 'Could not reveal contact')
     }
   }
 
@@ -101,7 +164,7 @@ export function OwnerDashboardPage() {
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-      <h1 className="text-2xl font-bold text-slate-900">Media Owner Dashboard</h1>
+      <h1 className="text-2xl font-bold text-slate-900">Publisher Dashboard</h1>
       <p className="mt-1 text-sm text-slate-500">{user?.companyName ?? 'Your company'}</p>
 
       {pending && (
@@ -131,8 +194,12 @@ export function OwnerDashboardPage() {
 
       <div className="mt-8 flex gap-2 overflow-x-auto border-b border-slate-200 pb-px">
         {tabs.map((t) => (
-          <button key={t.id} type="button" onClick={() => setTab(t.id)}
-            className={`shrink-0 border-b-2 px-4 py-3 text-sm font-semibold ${activeTab === t.id ? 'border-slate-900 text-slate-900' : 'border-transparent text-slate-500'}`}>
+          <button
+            key={t.id}
+            type="button"
+            onClick={() => setTab(t.id)}
+            className={`shrink-0 border-b-2 px-4 py-3 text-sm font-semibold ${activeTab === t.id ? 'border-slate-900 text-slate-900' : 'border-transparent text-slate-500'}`}
+          >
             {t.label}
           </button>
         ))}
@@ -147,8 +214,10 @@ export function OwnerDashboardPage() {
                 <p className="text-sm text-slate-500">Your portfolio performance at a glance</p>
               </div>
               {approved ? (
-                <Link to="/listings/new"
-                  className="flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-slate-800">
+                <Link
+                  to="/listings/new"
+                  className="flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-slate-800"
+                >
                   <Plus className="h-4 w-4" /> Create Listing
                 </Link>
               ) : (
@@ -160,6 +229,41 @@ export function OwnerDashboardPage() {
                 </span>
               )}
             </div>
+
+            {features && (
+              <div className="mb-6 grid gap-4 sm:grid-cols-3">
+                <div className="rounded-2xl border border-slate-200 bg-white p-4">
+                  <p className="text-sm text-slate-500">Featured placement</p>
+                  <p className="mt-1 font-semibold text-slate-900">{features.featured ? 'Active' : 'Not active'}</p>
+                  {features.featuredCities.length > 0 && (
+                    <p className="mt-1 text-xs text-slate-500">{features.featuredCities.join(', ')}</p>
+                  )}
+                </div>
+                <div className="rounded-2xl border border-slate-200 bg-white p-4">
+                  <p className="text-sm text-slate-500">Contact reveals</p>
+                  <p className="mt-1 font-semibold text-slate-900">
+                    {features.canViewAdvertiserContact ? 'Enabled' : 'Upgrade required'}
+                  </p>
+                  {features.canViewAdvertiserContact && (
+                    <p className="mt-1 text-xs text-slate-500">
+                      {features.contactRevealsUsed} / {features.contactRevealLimit || '∞'} used
+                    </p>
+                  )}
+                </div>
+                <div className="rounded-2xl border border-slate-200 bg-white p-4">
+                  <p className="text-sm text-slate-500">Commercial model</p>
+                  <p className="mt-1 font-semibold text-slate-900">
+                    {features.pricingModel?.listingFees?.active ? 'Listing fees on' : 'Standard'}
+                  </p>
+                  {features.pricingModel?.commission?.active && (
+                    <p className="mt-1 text-xs text-slate-500">
+                      Commission: {features.pricingModel.commission.rate}%
+                    </p>
+                  )}
+                </div>
+              </div>
+            )}
+
             {stats && (
               <ApprovalGate message="Analytics will be available once your profile is approved.">
                 <OverviewCharts stats={stats} days={days} onDaysChange={setDays} />
@@ -172,8 +276,10 @@ export function OwnerDashboardPage() {
           <div>
             <ApprovalGate>
               <div className="mb-4 flex justify-end">
-                <Link to="/listings/new"
-                  className="flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-slate-800">
+                <Link
+                  to="/listings/new"
+                  className="flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-slate-800"
+                >
                   <Plus className="h-4 w-4" /> Create Listing
                 </Link>
               </div>
@@ -192,11 +298,12 @@ export function OwnerDashboardPage() {
                     <Link to={`/listings/${l.id}`} className="min-w-0 flex-1">
                       <p className="font-semibold text-slate-900">{l.title}</p>
                       <p className="text-sm text-slate-500">
-                        {l.mediaCategory} · {l.city} · {l.priceMin.toLocaleString()} AED
+                        {MEDIA_CATEGORY_LABELS[l.mediaCategory] ?? l.mediaCategory} · {l.emirate || l.city} ·{' '}
+                        {l.pricingType === 'on_request' ? 'On request' : `${l.priceMin.toLocaleString()} AED`}
                       </p>
                     </Link>
                     <div className="flex items-center gap-2">
-                      <span className={`rounded-full px-2.5 py-0.5 text-xs font-bold capitalize ${statusBadge[l.status]}`}>
+                      <span className={`rounded-full px-2.5 py-0.5 text-xs font-bold capitalize ${statusBadge[l.status] ?? 'bg-slate-100 text-slate-700'}`}>
                         {l.status === 'approved' ? 'Live' : l.status.replace('_', ' ')}
                       </span>
                       <Link
@@ -206,6 +313,16 @@ export function OwnerDashboardPage() {
                       >
                         <Pencil className="h-4 w-4" />
                       </Link>
+                      {l.status === 'approved' && (
+                        <button
+                          type="button"
+                          onClick={() => handleDelistListing(l.id, l.title)}
+                          className="rounded-lg border border-amber-200 p-2 text-amber-700 hover:bg-amber-50"
+                          title="Delist listing"
+                        >
+                          <EyeOff className="h-4 w-4" />
+                        </button>
+                      )}
                       <button
                         type="button"
                         onClick={() => handleDeleteListing(l.id, l.title)}
@@ -230,20 +347,52 @@ export function OwnerDashboardPage() {
               </div>
             ) : (
               <div className="space-y-3">
-                {leads.map((l) => (
-                  <div key={l.id} className="rounded-xl border border-slate-200 bg-white p-4">
-                    <div className="flex flex-wrap items-start justify-between gap-2">
-                      <div>
-                        <p className="font-semibold text-slate-900">{l.campaignName}</p>
-                        <p className="text-sm text-slate-600">{l.advertiserName} · {l.mediaType}</p>
-                        <p className="mt-1 text-sm text-slate-500">{l.budgetRange} · {l.startDate} – {l.endDate}</p>
+                {leads.map((l) => {
+                  const revealed = revealedContacts[l.id]
+                  const contactKnown = revealed || l.contactViewedAt
+                  return (
+                    <div key={l.id} className="rounded-xl border border-slate-200 bg-white p-4">
+                      <div className="flex flex-wrap items-start justify-between gap-2">
+                        <div>
+                          <p className="font-semibold text-slate-900">{l.campaignName}</p>
+                          <p className="text-sm text-slate-600">
+                            {contactKnown
+                              ? `${revealed?.name ?? l.advertiserName} · ${revealed?.email ?? l.advertiserEmail}`
+                              : `${l.advertiserName} · ${l.mediaType}`}
+                          </p>
+                          <p className="mt-1 text-sm text-slate-500">{l.budgetRange} · {l.startDate} – {l.endDate}</p>
+                        </div>
+                        <select
+                          value={l.status}
+                          onChange={(e) => handleLeadStatus(l.id, e.target.value as LeadStatus)}
+                          className="rounded-lg border border-slate-200 px-2 py-1 text-xs font-semibold capitalize"
+                        >
+                          {LEAD_STATUS_OPTIONS.map((opt) => (
+                            <option key={opt.value} value={opt.value}>{opt.label}</option>
+                          ))}
+                        </select>
                       </div>
-                      <span className={`rounded-full px-2.5 py-0.5 text-xs font-bold capitalize ${statusBadge[l.status]}`}>{l.status}</span>
+                      <div className="mt-3 flex flex-wrap items-center gap-3">
+                        <button
+                          type="button"
+                          onClick={() => navigate('/dashboard/chats')}
+                          className="text-sm font-semibold text-amber-600 hover:text-amber-700"
+                        >
+                          Open chat
+                        </button>
+                        {features?.canViewAdvertiserContact && !contactKnown && (
+                          <button
+                            type="button"
+                            onClick={() => handleRevealContact(l.id, l.quoteRequestId)}
+                            className="text-sm font-semibold text-slate-700 hover:text-slate-900"
+                          >
+                            Reveal contact
+                          </button>
+                        )}
+                      </div>
                     </div>
-                    <button type="button" onClick={() => navigate('/dashboard/chats')}
-                      className="mt-3 text-sm font-semibold text-amber-600 hover:text-amber-700">Open chat</button>
-                  </div>
-                ))}
+                  )
+                })}
               </div>
             )}
           </ApprovalGate>
@@ -269,12 +418,17 @@ export function OwnerDashboardPage() {
                       <div>
                         <p className="font-semibold text-slate-900">{q.amountAed.toLocaleString()} AED</p>
                         <p className="text-sm text-slate-600">{q.advertiserName}</p>
-                        <p className="mt-1 text-sm text-slate-500 line-clamp-2">{q.description}</p>
+                        <p className="mt-1 line-clamp-2 text-sm text-slate-500">{q.description}</p>
                       </div>
                       <span className={`h-fit rounded-full px-2.5 py-0.5 text-xs font-bold capitalize ${statusBadge[q.status]}`}>{q.status}</span>
                     </div>
-                    <button type="button" onClick={() => navigate('/dashboard/chats')}
-                      className="mt-2 text-sm font-medium text-slate-700 hover:underline">View in chat</button>
+                    <button
+                      type="button"
+                      onClick={() => navigate('/dashboard/chats')}
+                      className="mt-2 text-sm font-medium text-slate-700 hover:underline"
+                    >
+                      View in chat
+                    </button>
                   </div>
                 ))}
               </div>
@@ -286,47 +440,75 @@ export function OwnerDashboardPage() {
 
         {activeTab === 'company-profile' && profile && (
           <div className="max-w-2xl space-y-4 rounded-2xl border border-slate-200 bg-white p-6">
-            <input value={profile.companyLegalName} onChange={(e) => setProfile({ ...profile, companyLegalName: e.target.value })}
-              className="w-full rounded-xl border px-4 py-2.5 text-sm" placeholder="Company name" />
-            <input value={profile.authorizedPerson} onChange={(e) => setProfile({ ...profile, authorizedPerson: e.target.value })}
-              className="w-full rounded-xl border px-4 py-2.5 text-sm" placeholder="Authorized person" />
-            <input value={profile.phone} onChange={(e) => setProfile({ ...profile, phone: e.target.value })}
-              className="w-full rounded-xl border px-4 py-2.5 text-sm" placeholder="Phone" />
-            <input value={profile.licenseNumber} onChange={(e) => setProfile({ ...profile, licenseNumber: e.target.value })}
-              className="w-full rounded-xl border px-4 py-2.5 text-sm" placeholder="License number" />
-            <select value={profile.city} onChange={(e) => setProfile({ ...profile, city: e.target.value })}
-              className="w-full rounded-xl border px-4 py-2.5 text-sm">
+            <input
+              value={profile.companyLegalName}
+              onChange={(e) => setProfile({ ...profile, companyLegalName: e.target.value })}
+              className="w-full rounded-xl border px-4 py-2.5 text-sm"
+              placeholder="Company name"
+            />
+            <input
+              value={profile.authorizedPerson}
+              onChange={(e) => setProfile({ ...profile, authorizedPerson: e.target.value })}
+              className="w-full rounded-xl border px-4 py-2.5 text-sm"
+              placeholder="Authorized person"
+            />
+            <input
+              value={profile.phone}
+              onChange={(e) => setProfile({ ...profile, phone: e.target.value })}
+              className="w-full rounded-xl border px-4 py-2.5 text-sm"
+              placeholder="Phone"
+            />
+            <input
+              value={profile.licenseNumber}
+              onChange={(e) => setProfile({ ...profile, licenseNumber: e.target.value })}
+              className="w-full rounded-xl border px-4 py-2.5 text-sm"
+              placeholder="License number"
+            />
+            <select
+              value={profile.city}
+              onChange={(e) => setProfile({ ...profile, city: e.target.value })}
+              className="w-full rounded-xl border px-4 py-2.5 text-sm"
+            >
               {UAE_CITIES.map((c) => <option key={c} value={c}>{c}</option>)}
             </select>
             <div className="flex flex-wrap gap-2">
-              {MEDIA_TYPES.map((cat) => (
-                <button key={cat} type="button"
-                  onClick={() => setProfile({
-                    ...profile,
-                    mediaCategories: profile.mediaCategories.includes(cat)
-                      ? profile.mediaCategories.filter((c) => c !== cat)
-                      : [...profile.mediaCategories, cat],
-                  })}
-                  className={`rounded-full px-3 py-1 text-sm ${profile.mediaCategories.includes(cat) ? 'bg-slate-900 text-white' : 'border'}`}>
-                  {cat}
+              {MEDIA_CATEGORIES.map((cat) => (
+                <button
+                  key={cat}
+                  type="button"
+                  onClick={() =>
+                    setProfile({
+                      ...profile,
+                      mediaCategories: profile.mediaCategories.includes(cat)
+                        ? profile.mediaCategories.filter((c) => c !== cat)
+                        : [...profile.mediaCategories, cat],
+                    })
+                  }
+                  className={`rounded-full px-3 py-1 text-sm ${profile.mediaCategories.includes(cat) ? 'bg-slate-900 text-white' : 'border'}`}
+                >
+                  {MEDIA_CATEGORY_LABELS[cat]}
                 </button>
               ))}
             </div>
             <CompanyDocumentsSection profile={{ ...profile, documents: profile.documents ?? [] }} onChange={setProfile} />
             {(rejected || !approved) && (
-              <button type="button" onClick={async () => {
-                if (!agencyId) return
-                await saveProfile()
-                updateProfile({ ownerApprovalStatus: 'submitted', companyName: profile.companyLegalName })
-                refreshUser()
-              }}
-                className="rounded-xl bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white">
+              <button
+                type="button"
+                onClick={async () => {
+                  if (!agencyId) return
+                  await saveProfile()
+                  updateProfile({ ownerApprovalStatus: 'submitted', companyName: profile.companyLegalName })
+                  refreshUser()
+                }}
+                className="rounded-xl bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white"
+              >
                 Resubmit for approval
               </button>
             )}
             {approved && (
-              <button type="button" onClick={saveProfile}
-                className="rounded-xl border px-5 py-2.5 text-sm font-semibold">Save changes</button>
+              <button type="button" onClick={saveProfile} className="rounded-xl border px-5 py-2.5 text-sm font-semibold">
+                Save changes
+              </button>
             )}
           </div>
         )}

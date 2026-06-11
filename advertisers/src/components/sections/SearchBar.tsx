@@ -13,7 +13,7 @@ import {
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { setPendingRedirectPath } from '../auth/ProtectedRoute'
-import { BUDGET_OPTIONS, CITIES, MEDIA_TYPES } from '@shared/constants'
+import { BUDGET_OPTIONS, CITIES, MEDIA_CATEGORIES, MEDIA_CATEGORY_LABELS } from '@shared/constants'
 import { useAuth } from '../../context/AuthContext'
 import { addSearchHistory } from '../../services/userStore'
 import { browsePathFromFilters } from '@shared/utils/searchParams'
@@ -29,6 +29,7 @@ interface SearchBarProps {
   resultCount: number
   totalListings: number
   hasSearched: boolean
+  heroImage?: string
 }
 
 interface FilterFieldProps {
@@ -79,7 +80,9 @@ export function SearchBar({
   resultCount,
   totalListings,
   hasSearched,
+  heroImage,
 }: SearchBarProps) {
+  const panelImage = heroImage || SEARCH_HERO_IMAGE
   const placementLabel =
     totalListings === 1 ? '1 placement' : `${totalListings} placements`
   const [showMore, setShowMore] = useState(false)
@@ -114,7 +117,7 @@ export function SearchBar({
 
   const mediaOptions = [
     { value: 'all', label: 'All media types' },
-    ...MEDIA_TYPES.map((t) => ({ value: t, label: t })),
+    ...MEDIA_CATEGORIES.map((t) => ({ value: t, label: MEDIA_CATEGORY_LABELS[t] })),
   ]
 
   const cityOptions = CITIES.map((c) => ({ value: c, label: c }))
@@ -133,9 +136,9 @@ export function SearchBar({
             {/* Visual panel */}
             <div className="relative hidden min-h-[320px] lg:col-span-5 lg:block">
               <img
-                src={SEARCH_HERO_IMAGE}
-                alt="Dubai skyline — premium media placements"
-                className="absolute inset-0 h-full w-full object-cover"
+                src={panelImage}
+                alt="UAE media placements"
+                className="absolute inset-0 h-full w-full object-cover transition-opacity duration-500"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-indigo-950/95 via-indigo-900/50 to-violet-800/30" />
               <div className="absolute inset-0 bg-gradient-to-r from-transparent to-indigo-950/40" />
@@ -200,9 +203,9 @@ export function SearchBar({
                 {/* Mobile image strip */}
                 <div className="relative mb-5 h-36 overflow-hidden rounded-2xl lg:hidden">
                   <img
-                    src={SEARCH_HERO_IMAGE}
+                    src={panelImage}
                     alt="UAE media placements"
-                    className="h-full w-full object-cover"
+                    className="h-full w-full object-cover transition-opacity duration-500"
                   />
                   <div className="absolute inset-0 bg-gradient-to-r from-indigo-950/80 to-transparent" />
                   <div className="absolute bottom-4 left-4">

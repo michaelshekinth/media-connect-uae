@@ -10,6 +10,8 @@ const adminConfigSchema = new Schema(
     commissionRules: { type: [Schema.Types.Mixed], default: [] },
     cmsPages: { type: [Schema.Types.Mixed], default: [] },
     emailTemplates: { type: [Schema.Types.Mixed], default: [] },
+    heroImagesByEmirate: { type: Schema.Types.Mixed, default: {} },
+    howItWorks: { type: Schema.Types.Mixed, default: {} },
     settings: { type: Schema.Types.Mixed, default: {} },
   },
   { timestamps: true },

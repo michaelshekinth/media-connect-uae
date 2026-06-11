@@ -1,11 +1,7 @@
-import { BadgeCheck, Eye, Heart, Lock, Mail, Phone, Share2, Star } from 'lucide-react'
+import { BadgeCheck, Eye, Heart, Lock, Mail, MapPin, Phone, Share2, Star } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Link, useOutletContext, useParams } from 'react-router-dom'
-import { AgencyGallery } from '../components/agency/AgencyGallery'
 import { AgencyMap } from '../components/agency/AgencyMap'
-import { Deliverables } from '../components/agency/Deliverables'
-import { PricingPlans } from '../components/agency/PricingPlans'
-import { SimilarListings } from '../components/agency/SimilarListings'
 import { MediaCard } from '../components/browse/MediaCard'
 import { RequestQuoteModal } from '../components/quotes/RequestQuoteModal'
 import { Breadcrumbs } from '../components/ui/Breadcrumbs'
@@ -15,7 +11,6 @@ import {
   addRecentlyViewed,
   canRevealContact,
   fetchAgency,
-  fetchListings,
   hasRevealedContact,
   isFavoriteAgency,
   revealAgencyContact,
@@ -27,13 +22,17 @@ import { NotFoundPage } from './NotFoundPage'
 
 type OutletCtx = { showToast: (msg: string) => void }
 
+type AgencyDetail = AgencyProfile & {
+  featured?: boolean
+  avgResponseHours?: number
+}
+
 export function AgencyDetailPage() {
   const { id } = useParams<{ id: string }>()
   const { showToast } = useOutletContext<OutletCtx>()
-  const [agency, setAgency] = useState<AgencyProfile | null>(null)
+  const [agency, setAgency] = useState<AgencyDetail | null>(null)
   const [loading, setLoading] = useState(true)
   const [agencyListings, setAgencyListings] = useState<Listing[]>([])
-  const [similarListings, setSimilarListings] = useState<Listing[]>([])
   const [saved, setSaved] = useState(false)
   const [quoteOpen, setQuoteOpen] = useState(false)
   const [contactRevealed, setContactRevealed] = useState(false)
@@ -50,17 +49,10 @@ export function AgencyDetailPage() {
     fetchAgency(id)
       .then(async (data) => {
         if (cancelled) return
-        setAgency(data as unknown as AgencyProfile)
+        setAgency(data as unknown as AgencyDetail)
         const listings = await getListingsForAgency(id, (data as { name?: string }).name)
         if (cancelled) return
         setAgencyListings(listings)
-        const all = await fetchListings()
-        if (cancelled) return
-        const ids = new Set(listings.map((l) => l.id))
-        const similar = [...listings, ...all.filter((l) => !ids.has(l.id))]
-          .filter((l) => l.agencyId !== id && (l.mediaType === (data as { mediaTypes?: string[] }).mediaTypes?.[0] || l.city === (data as { city?: string }).city))
-          .slice(0, 4)
-        setSimilarListings(similar)
         addRecentlyViewed(id).catch(() => {})
         const fav = await isFavoriteAgency(id)
         if (!cancelled) setSaved(fav)
@@ -115,6 +107,8 @@ export function AgencyDetailPage() {
 
   if (!agency) return <NotFoundPage />
 
+  const avgResponse = agency.avgResponseHours ?? agency.responseHours
+
   return (
     <div className="pb-24">
       <div className="relative h-48 overflow-hidden sm:h-64">
@@ -130,16 +124,19 @@ export function AgencyDetailPage() {
               {agency.initials}
             </div>
             <div>
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <h1 className="text-2xl font-bold text-slate-900 sm:text-3xl">{agency.name}</h1>
                 {agency.verified && <BadgeCheck className="h-6 w-6 text-indigo-600" />}
+                {agency.featured && (
+                  <span className="rounded-full bg-orange-100 px-3 py-0.5 text-xs font-bold text-orange-700">
+                    Featured
+                  </span>
+                )}
               </div>
               <div className="mt-1 flex items-center gap-2 text-sm text-slate-600">
                 <Star className="h-4 w-4 fill-amber-400 text-amber-400" />
                 <span className="font-semibold">{agency.rating}</span>
                 <span>({agency.reviewCount} reviews)</span>
-                <span>·</span>
-                <span>{agency.city}</span>
               </div>
             </div>
           </div>
@@ -195,77 +192,33 @@ export function AgencyDetailPage() {
         <section className="mb-10">
           <h2 className="mb-3 text-lg font-bold text-slate-900">About</h2>
           <p className="max-w-3xl text-slate-600 leading-relaxed">{agency.about}</p>
-          <p className="mt-3 text-sm text-slate-500">
-            <strong>HQ:</strong> {agency.address} · <strong>Response time:</strong> within {agency.responseHours}h
-          </p>
-        </section>
-
-        <section className="mb-10">
-          <h2 className="mb-4 text-lg font-bold text-slate-900">Gallery</h2>
-          <AgencyGallery images={agency.gallery} name={agency.name} />
-        </section>
-
-        <section className="mb-10">
-          <h2 className="mb-4 text-lg font-bold text-slate-900">Services</h2>
-          <div className="flex flex-wrap gap-2">
-            {agency.services.map((s) => (
-              <span key={s} className="rounded-full border border-indigo-200 bg-indigo-50 px-4 py-2 text-sm font-medium text-indigo-800">
-                {s}
-              </span>
-            ))}
+          <div className="mt-4 flex flex-wrap gap-4 text-sm text-slate-600">
+            <span className="flex items-center gap-1.5">
+              <MapPin className="h-4 w-4 text-indigo-500" />
+              <strong className="text-slate-800">HQ:</strong> {agency.address || agency.city}
+            </span>
+            <span>
+              <strong className="text-slate-800">Avg. response:</strong> within {avgResponse}h
+            </span>
           </div>
         </section>
 
         <section className="mb-10">
-          <h2 className="mb-4 text-lg font-bold text-slate-900">Pricing plans</h2>
-          <PricingPlans plans={agency.pricingPlans} />
-        </section>
-
-        <section className="mb-10">
-          <h2 className="mb-4 text-lg font-bold text-slate-900">Deliverables</h2>
-          <Deliverables items={agency.deliverables} />
-        </section>
-
-        <section className="mb-10">
-          <h2 className="mb-4 text-lg font-bold text-slate-900">Location</h2>
-          <AgencyMap lat={agency.lat} lng={agency.lng} name={agency.name} address={agency.address} />
-        </section>
-
-        <section className="mb-10">
-          <h2 className="mb-4 text-lg font-bold text-slate-900">Reviews</h2>
-          <div className="grid gap-4 sm:grid-cols-2">
-            {agency.reviews.map((r) => (
-              <div key={r.id} className="rounded-xl border border-slate-200 bg-white p-4">
-                <div className="flex items-center gap-2">
-                  <span className="font-semibold text-slate-800">{r.author}</span>
-                  <div className="flex">
-                    {Array.from({ length: r.rating }).map((_, i) => (
-                      <Star key={i} className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
-                    ))}
-                  </div>
-                </div>
-                <p className="mt-2 text-sm text-slate-600">{r.text}</p>
-                <p className="mt-2 text-xs text-slate-400">{r.date}</p>
-              </div>
-            ))}
+          <h2 className="mb-4 text-lg font-bold text-slate-900">Listings</h2>
+          {agencyListings.length === 0 ? (
+            <p className="text-sm text-slate-500">No active listings yet.</p>
+          ) : (
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {agencyListings.map((listing) => (
+                <MediaCard key={listing.id} listing={listing} />
+              ))}
+            </div>
+          )}
+          <div className="mt-8">
+            <h3 className="mb-3 text-base font-semibold text-slate-800">Location</h3>
+            <AgencyMap lat={agency.lat} lng={agency.lng} name={agency.name} address={agency.address} />
           </div>
         </section>
-
-        <section className="mb-10">
-          <h2 className="mb-4 text-lg font-bold text-slate-900">Media placements</h2>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {agencyListings.map((listing) => (
-              <MediaCard key={listing.id} listing={listing} />
-            ))}
-          </div>
-        </section>
-
-        {similarListings.length > 0 && (
-          <section className="mb-10">
-            <h2 className="mb-4 text-lg font-bold text-slate-900">Similar listings</h2>
-            <SimilarListings listings={similarListings} />
-          </section>
-        )}
       </div>
 
       <div className="fixed bottom-0 left-0 right-0 z-40 border-t border-slate-200 bg-white/95 px-4 py-4 backdrop-blur-md">

@@ -2,11 +2,11 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { UnderReviewModal } from '../../components/owner/UnderReviewModal'
 import { DocumentUpload } from '../../components/ui/DocumentUpload'
-import { MEDIA_TYPES, UAE_CITIES } from '@shared/constants'
+import { MEDIA_CATEGORIES, MEDIA_CATEGORY_LABELS, UAE_CITIES } from '@shared/constants'
 import { useOwnerAuth } from '../../context/OwnerAuthContext'
 import { submitCompanyProfile } from '../../services/ownerStore'
 import type { OwnerCompanyProfile, UploadedDocument } from '@shared/types/owner'
-import type { MediaType } from '@shared/types'
+import type { MediaCategory } from '@shared/types/categories'
 import { hasRequiredCompanyDocuments, syncLicenseFromDocuments } from '../../utils/ownerDocuments'
 import { findDocument, upsertDocument } from '@shared/utils/fileUpload'
 
@@ -68,7 +68,7 @@ export function OwnerOnboardingPage() {
     })
   }
 
-  const toggleCategory = (cat: MediaType) => {
+  const toggleCategory = (cat: MediaCategory) => {
     setProfile((p) => ({
       ...p,
       mediaCategories: p.mediaCategories.includes(cat)
@@ -115,13 +115,13 @@ export function OwnerOnboardingPage() {
 
   const goToDashboard = () => {
     setShowReviewModal(false)
-    navigate('/dashboard')
+    navigate('/dashboard/chats')
   }
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-10 sm:px-6">
       <h1 className="text-2xl font-bold text-slate-900">Complete your company profile</h1>
-      <p className="mt-1 text-sm text-slate-500">Step {step} of {TOTAL_STEPS} — required before accessing the owner dashboard</p>
+      <p className="mt-1 text-sm text-slate-500">Step {step} of {TOTAL_STEPS} — required before accessing the publisher dashboard</p>
 
       <div className="mt-6 flex gap-2">
         {Array.from({ length: TOTAL_STEPS }, (_, i) => i + 1).map((s) => (
@@ -200,14 +200,38 @@ export function OwnerOnboardingPage() {
               value={findDocument(profile.documents, 'company_logo') ?? null}
               onChange={(doc) => setDoc('company_logo', 'Company logo', doc)}
             />
+            <DocumentUpload
+              label="Insurance certificate"
+              hint="Public liability or media placement insurance (recommended)"
+              accept=".pdf,image/*"
+              documentType="insurance"
+              value={findDocument(profile.documents, 'insurance') ?? null}
+              onChange={(doc) => setDoc('insurance', 'Insurance certificate', doc)}
+            />
+            <DocumentUpload
+              label="Media kit"
+              hint="Optional — company overview and inventory summary"
+              accept=".pdf,image/*"
+              documentType="media_kit"
+              value={findDocument(profile.documents, 'media_kit') ?? null}
+              onChange={(doc) => setDoc('media_kit', 'Media kit', doc)}
+            />
+            <DocumentUpload
+              label="Rate card"
+              hint="Optional — standard rate sheet for your inventory"
+              accept=".pdf,image/*"
+              documentType="rate_card"
+              value={findDocument(profile.documents, 'rate_card') ?? null}
+              onChange={(doc) => setDoc('rate_card', 'Rate card', doc)}
+            />
 
             <div>
               <p className="mb-2 text-sm font-medium">Media categories operated *</p>
               <div className="flex flex-wrap gap-2">
-                {MEDIA_TYPES.map((cat) => (
+                {MEDIA_CATEGORIES.map((cat) => (
                   <button key={cat} type="button" onClick={() => toggleCategory(cat)}
                     className={`rounded-full px-3 py-1.5 text-sm font-medium ${profile.mediaCategories.includes(cat) ? 'bg-slate-900 text-white' : 'border border-slate-200 text-slate-600'}`}>
-                    {cat}
+                    {MEDIA_CATEGORY_LABELS[cat]}
                   </button>
                 ))}
               </div>
@@ -225,7 +249,7 @@ export function OwnerOnboardingPage() {
             <p><strong>Phone:</strong> {profile.phone}</p>
             <p><strong>License:</strong> {profile.licenseNumber}</p>
             <p><strong>License expiry:</strong> {profile.licenseExpiry || '—'}</p>
-            <p><strong>Categories:</strong> {profile.mediaCategories.join(', ')}</p>
+            <p><strong>Categories:</strong> {profile.mediaCategories.map((c) => MEDIA_CATEGORY_LABELS[c]).join(', ')}</p>
             <p><strong>Documents:</strong> {profile.documents.map((d) => d.label).join(', ') || 'None'}</p>
             <p className="text-slate-500">After submission, an admin will review your profile before you can publish listings.</p>
           </div>

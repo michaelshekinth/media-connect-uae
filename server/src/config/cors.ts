@@ -5,6 +5,7 @@ const DEFAULT_ORIGINS = [
   'https://media-connect-uae.vercel.app',
   'https://media-owner.vercel.app',
   'https://super-admin.vercel.app',
+  'https://super-admin-seven-beta.vercel.app',
 ]
 
 export function getCorsOrigins(): string[] {

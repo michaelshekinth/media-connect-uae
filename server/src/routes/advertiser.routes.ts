@@ -13,6 +13,11 @@ import { newId } from '../utils/id.js'
 import { containsContactInfo, maskContactInfo } from '../utils/contact.js'
 import { serializeUser } from '../services/serializers.js'
 import { param } from '../utils/params.js'
+import { queueEmail } from '../services/emailService.js'
+import { recordRevenueEntry } from '../services/revenueService.js'
+import { PublisherPricingModel } from '../models/PublisherPricingModel.js'
+import { pickUserProfile } from '../utils/userFields.js'
+import { notifyAdmins } from '../services/notifyAdmins.js'
 
 export const advertiserRouter = Router()
 advertiserRouter.use(requireAuth, requireRole('advertiser'))
@@ -24,7 +29,8 @@ advertiserRouter.get('/profile', async (req: AuthRequest, res) => {
 })
 
 advertiserRouter.patch('/profile', async (req: AuthRequest, res) => {
-  const user = await User.findByIdAndUpdate(req.auth!.sub, { $set: req.body }, { new: true })
+  const updates = pickUserProfile(req.body as Record<string, unknown>)
+  const user = await User.findByIdAndUpdate(req.auth!.sub, { $set: updates }, { new: true })
   if (!user) return res.status(404).json({ error: 'Not found' })
   res.json(serializeUser(user))
 })
@@ -57,10 +63,20 @@ advertiserRouter.get('/quotes', async (req: AuthRequest, res) => {
 advertiserRouter.post('/quotes', async (req: AuthRequest, res) => {
   const user = await User.findById(req.auth!.sub)
   if (!user) return res.status(404).json({ error: 'Not found' })
-  const body = req.body as Record<string, string>
-  const agency = await Agency.findOne({ agencyId: body.agencyId })
+  const body = req.body as Record<string, string | boolean>
+  if (!body.agencyId || !body.campaignName?.toString().trim()) {
+    return res.status(400).json({ error: 'agencyId and campaignName are required' })
+  }
+  if (!body.mediaType || !body.budgetRange) {
+    return res.status(400).json({ error: 'mediaType and budgetRange are required' })
+  }
+  const agency = await Agency.findOne({ agencyId: body.agencyId as string })
+  if (!agency || agency.status !== 'approved') {
+    return res.status(400).json({ error: 'Publisher not found or not approved' })
+  }
   const quoteId = newId('quote_')
   const threadId = `${body.agencyId}_${req.auth!.sub}`
+  const permitAssistance = body.permitAssistance === true || body.permitAssistance === 'true'
   const quote = await QuoteRequest.create({
     quoteId,
     agencyId: body.agencyId,
@@ -75,7 +91,10 @@ advertiserRouter.post('/quotes', async (req: AuthRequest, res) => {
     startDate: body.startDate,
     endDate: body.endDate,
     message: body.message,
-    status: 'pending',
+    objectives: body.objectives ? String(body.objectives).split(',').filter(Boolean) : [],
+    emirate: body.emirate ?? '',
+    permitAssistance,
+    status: 'connected',
   })
   let thread = await ChatThread.findOne({ threadId })
   const msgText = `Quote request for "${body.campaignName}" — Budget: ${body.budgetRange}. ${body.message}`
@@ -112,6 +131,37 @@ advertiserRouter.post('/quotes', async (req: AuthRequest, res) => {
     title: 'Quote sent',
     description: `Requested quote from ${body.agencyName}`,
   })
+
+  const ownerUser = await User.findOne({ agencyId: body.agencyId, role: 'media_owner' })
+  if (ownerUser?.email) {
+    const ownerUrl = process.env.MEDIA_OWNER_URL ?? 'https://media-owner.vercel.app'
+    await queueEmail({
+      templateId: 'quote_requested',
+      to: ownerUser.email,
+      subject: 'New quote request on MediaConnect',
+      body: `${user.fullName} requested a quote for "${body.campaignName}".\n\nView: ${ownerUrl}/owner/dashboard/chats`,
+    })
+  }
+
+  if (permitAssistance) {
+    await notifyAdmins({
+      templateId: 'permit_assistance',
+      subject: 'Permit assistance requested',
+      body: `${user.fullName} (${user.email}) needs permit help for "${body.campaignName}" from ${body.agencyName ?? agency.name}.`,
+    })
+  }
+
+  const pricing = await PublisherPricingModel.findOne({ agencyId: body.agencyId })
+  if (pricing?.leadGenFees?.active && pricing.leadGenFees.amount) {
+    await recordRevenueEntry({
+      agencyId: String(body.agencyId),
+      modelType: 'lead_gen',
+      amount: pricing.leadGenFees.amount,
+      sourceId: quoteId,
+      notes: 'Lead gen fee on new quote',
+    })
+  }
+
   res.status(201).json({ ...quote.toObject(), id: quote.quoteId })
 })
 

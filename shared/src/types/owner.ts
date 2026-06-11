@@ -1,11 +1,19 @@
-import type { MediaType } from './index'
+import type { MediaCategory, MediaType } from './categories'
 
 export type OwnerApprovalStatus = 'draft' | 'submitted' | 'approved' | 'rejected'
-export type ListingApprovalStatus = 'draft' | 'pending_approval' | 'approved' | 'rejected' | 'archived'
+export type ListingApprovalStatus =
+  | 'draft'
+  | 'pending_approval'
+  | 'pending_edit_approval'
+  | 'approved'
+  | 'rejected'
+  | 'archived'
 export type CustomQuoteStatus = 'sent' | 'accepted' | 'declined'
-export type OwnerMediaCategory = 'OOH/DOOH' | 'TV' | 'Radio' | 'Print'
-export type PricingType = 'fixed' | 'range' | 'on_request'
-export type BillingDuration = 'per_week' | 'per_month' | 'per_campaign' | 'per_spot'
+export type OwnerMediaCategory = MediaCategory
+export type PricingType = 'fixed' | 'range' | 'starting_price' | 'on_request'
+export type BillingDuration = 'per_day' | 'per_week' | 'per_month' | 'per_campaign' | 'per_spot' | 'custom'
+export type LeadStatus = 'connected' | 'quoted' | 'converted' | 'lost'
+export type AssetOwnership = 'owned' | 'leased'
 
 export type DocumentType =
   | 'trade_license'
@@ -33,13 +41,14 @@ export interface UploadedDocument {
 }
 
 export type OwnerDashboardTab =
+  | 'chats'
   | 'overview'
   | 'listings'
   | 'leads'
-  | 'chats'
   | 'quotes-sent'
   | 'notifications'
   | 'company-profile'
+  | 'purchases'
 
 export type OwnerNotificationType =
   | 'new_lead'
@@ -67,7 +76,7 @@ export interface OwnerCompanyProfile {
   licenseDocument: string | null
   licenseDocumentName: string
   vatTrn: string
-  mediaCategories: MediaType[]
+  mediaCategories: MediaCategory[]
   companyDescription: string
   logoUrl: string | null
   documents: UploadedDocument[]
@@ -81,6 +90,8 @@ export interface OwnerListing {
   mediaCategory: OwnerMediaCategory
   mediaType: MediaType
   subcategory: string
+  subcategoryId?: string
+  emirate: string
   city: string
   area: string
   landmark: string
@@ -91,9 +102,16 @@ export interface OwnerListing {
   priceMin: number
   priceMax: number
   billingDuration: BillingDuration
+  customDurationLabel?: string
+  oohType?: string
+  mediaTypeDetail?: string
+  objectives?: string[]
+  aboutPlacement: string
   availability: 'immediate' | '1-2-weeks'
   descriptionShort: string
   descriptionLong: string
+  assetOwnership?: AssetOwnership | null
+  submissionType?: 'create' | 'edit'
   imageUrl: string
   galleryImages: string[]
   deliverables: string[]
@@ -122,7 +140,9 @@ export interface InboundLead {
   endDate: string
   message: string
   listingId?: string
-  status: 'pending' | 'responded' | 'accepted' | 'declined'
+  status: LeadStatus
+  contactViewedAt?: string
+  convertedAmount?: number
   quotedAmount?: number
   createdAt: string
 }

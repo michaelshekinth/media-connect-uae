@@ -17,10 +17,10 @@ export function DashboardPage() {
         <StatCard label="Pending Profiles" value={stats?.pendingProfiles ?? '—'} hint="Awaiting approval" />
         <StatCard label="Pending Listings" value={stats?.pendingListings ?? '—'} />
         <StatCard label="Advertisers" value={stats?.totalAdvertisers ?? '—'} />
-        <StatCard label="Approved Media Owners" value={stats?.approvedOwners ?? '—'} />
+        <StatCard label="Approved Publishers" value={stats?.approvedOwners ?? '—'} />
         <StatCard label="Total RFQs" value={stats?.totalRFQs ?? '—'} />
         <StatCard label="Active Chats" value={stats?.totalChats ?? '—'} />
-        <StatCard label="Media Owners" value={stats?.totalMediaOwners ?? '—'} />
+        <StatCard label="Publishers" value={stats?.totalMediaOwners ?? '—'} />
         <StatCard label="Total Users" value={stats?.totalUsers ?? '—'} />
       </div>
       <div className="mt-8 flex flex-wrap gap-3">

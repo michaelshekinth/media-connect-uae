@@ -8,9 +8,9 @@ export function QuotesPage() {
 
   return (
     <div>
-      <PageHeader title="Custom Quotes" subtitle="Quotes sent by media owners to advertisers" />
+      <PageHeader title="Custom Quotes" subtitle="Quotes sent by publishers to advertisers" />
       <DataTable
-        headers={['Amount', 'Advertiser', 'Media Owner', 'Description', 'Status', 'Date']}
+        headers={['Amount', 'Advertiser', 'Publisher', 'Description', 'Status', 'Date']}
         rows={quotes.map((q) => [
           `${q.amountAed.toLocaleString()} AED`,
           q.advertiserName,

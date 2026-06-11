@@ -10,6 +10,7 @@ export function filtersToSearchParams(filters: SearchFilters): URLSearchParams {
   if (filters.availability !== 'all') p.set('availability', filters.availability)
   if (filters.format !== 'all') p.set('format', filters.format)
   if (filters.rating4Plus) p.set('rating4Plus', '1')
+  if (filters.subcategory !== 'all') p.set('subcategory', filters.subcategory)
   return p
 }
 
@@ -23,6 +24,7 @@ export function searchParamsToFilters(params: URLSearchParams): SearchFilters {
       DEFAULT_FILTERS.availability,
     format: (params.get('format') as SearchFilters['format']) || DEFAULT_FILTERS.format,
     rating4Plus: params.get('rating4Plus') === '1',
+    subcategory: params.get('subcategory') || DEFAULT_FILTERS.subcategory,
   }
 }
 

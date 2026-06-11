@@ -42,9 +42,58 @@ export async function createOwnerListing(_agencyId: string, listing: Partial<Own
 }
 
 export async function addOwnerListing(agencyId: string, listing: OwnerListing) {
-  const created = await createOwnerListing(agencyId, { ...listing, status: 'pending_approval' })
-  await submitListingForApproval(agencyId, created.id)
-  return created
+  return createOwnerListing(agencyId, { ...listing, status: 'pending_approval' })
+}
+
+export async function delistOwnerListing(_agencyId: string, listingId: string) {
+  return apiFetch<OwnerListing>(`/owner/listings/${listingId}/delist`, { method: 'POST', role })
+}
+
+export async function updateLeadStatus(
+  _agencyId: string,
+  leadId: string,
+  status: string,
+  convertedAmount?: number,
+) {
+  return apiFetch(`/owner/leads/${leadId}/status`, {
+    method: 'PATCH',
+    body: JSON.stringify({ status, convertedAmount }),
+    role,
+  })
+}
+
+export async function requestSubcategory(categoryId: string, proposedName: string) {
+  return apiFetch('/owner/subcategory-requests', {
+    method: 'POST',
+    body: JSON.stringify({ categoryId, proposedName }),
+    role,
+  })
+}
+
+export interface OwnerFeatures {
+  featured: boolean
+  featuredFrom: string | null
+  featuredUntil: string | null
+  featuredCities: string[]
+  pricingModel: {
+    listingFees: { mode: string; amount: number; active: boolean }
+    leadGenFees: { mode: string; amount: number; active: boolean }
+    commission: { mode: string; rate: number; active: boolean }
+  } | null
+  canViewAdvertiserContact: boolean
+  contactRevealLimit: number
+  contactRevealsUsed: number
+}
+
+export async function getOwnerFeatures(_agencyId: string): Promise<OwnerFeatures> {
+  return apiFetch<OwnerFeatures>('/owner/features', { role })
+}
+
+export async function revealAdvertiserContact(_agencyId: string, quoteId: string) {
+  return apiFetch<{ advertiserName: string; advertiserEmail: string }>(
+    `/owner/reveal-advertiser/${quoteId}`,
+    { method: 'POST', role },
+  )
 }
 
 export async function updateOwnerListing(_agencyId: string, listing: OwnerListing) {
@@ -134,13 +183,22 @@ export function createInboundLeadFromQuote(quote: QuoteRequest, advertiserId: st
     endDate: quote.endDate,
     message: quote.message,
     listingId: quote.listingId,
-    status: 'pending',
+    status: 'connected',
     createdAt: quote.createdAt,
   }
 }
 
-export async function addInboundLead() {}
-export async function getOrCreateOwnerThread() { return null }
-export async function addOwnerChatMessage() {}
-export async function updateLeadStatus() {}
-export async function updateCustomQuoteStatus() {}
+export async function fetchPublicSubcategories(categoryId?: string) {
+  const query = categoryId ? `?category=${encodeURIComponent(categoryId)}` : ''
+  return apiFetch<import('@shared/types/categories').Subcategory[]>(`/public/subcategories${query}`, {
+    auth: false,
+  })
+}
+
+export async function submitOwnerPurchase(packageId: string, notes?: string) {
+  return apiFetch<{ ok: boolean; requestId: string; status: string }>('/owner/purchases', {
+    method: 'POST',
+    body: JSON.stringify({ packageId, notes }),
+    role,
+  })
+}

@@ -1,10 +1,11 @@
 import { motion } from 'framer-motion'
-import { ArrowUpRight, Mic2, Monitor, Radio, Sparkles, Tv } from 'lucide-react'
-import type { Listing, MediaType } from '@shared/types'
+import { ArrowUpRight, Mic2, Monitor, Newspaper, Radio, Tv } from 'lucide-react'
+import { MEDIA_CATEGORY_COLORS, MEDIA_CATEGORY_LABELS } from '@shared/constants'
+import type { Listing, MediaCategory } from '@shared/types'
 import { HolographicCategoryIcon } from '../ui/HolographicCategoryIcon'
 
 const categoryConfig: {
-  type: MediaType
+  type: MediaCategory
   icon: typeof Monitor
   description: string
   variant: 'indigo' | 'violet' | 'blue' | 'emerald' | 'orange'
@@ -16,25 +17,25 @@ const categoryConfig: {
     variant: 'indigo',
   },
   {
-    type: 'DOOH',
-    icon: Sparkles,
-    description: 'Digital screens in malls, airports & high-traffic zones',
-    variant: 'violet',
-  },
-  {
-    type: 'TC',
+    type: 'TV',
     icon: Tv,
     description: 'Prime-time TV spots on national & regional channels',
     variant: 'blue',
   },
   {
-    type: 'Radio & Print',
+    type: 'Radio',
     icon: Radio,
-    description: 'Radio campaigns and premium print placements',
+    description: 'Radio campaigns on leading UAE stations',
     variant: 'emerald',
   },
   {
-    type: 'Influencers',
+    type: 'Press',
+    icon: Newspaper,
+    description: 'Newspaper, magazine & premium print placements',
+    variant: 'violet',
+  },
+  {
+    type: 'ContentCreators',
     icon: Mic2,
     description: 'Creator partnerships from micro to macro influencers',
     variant: 'orange',
@@ -43,7 +44,7 @@ const categoryConfig: {
 
 interface FeaturedCategoriesProps {
   listings?: Listing[]
-  onSelectCategory: (type: MediaType) => void
+  onSelectCategory: (type: MediaCategory) => void
 }
 
 export function FeaturedCategories({ listings = [], onSelectCategory }: FeaturedCategoriesProps) {
@@ -68,6 +69,7 @@ export function FeaturedCategories({ listings = [], onSelectCategory }: Featured
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
           {categoryConfig.map((cat, i) => {
             const count = listings.filter((l) => l.mediaType === cat.type).length
+            const variant = MEDIA_CATEGORY_COLORS[cat.type].chip
 
             return (
               <motion.button
@@ -79,7 +81,7 @@ export function FeaturedCategories({ listings = [], onSelectCategory }: Featured
                 transition={{ delay: i * 0.08, duration: 0.45 }}
                 whileHover={{ y: -8 }}
                 onClick={() => onSelectCategory(cat.type)}
-                className={`category-card category-card--${cat.variant} group relative text-left`}
+                className={`category-card category-card--${variant} group relative text-left`}
               >
                 <div className="category-card__border" aria-hidden />
                 <div className="category-card__glow" aria-hidden />
@@ -91,11 +93,11 @@ export function FeaturedCategories({ listings = [], onSelectCategory }: Featured
                   <div className="relative z-10 flex h-full flex-col p-6">
                     <HolographicCategoryIcon
                       icon={cat.icon}
-                      variant={cat.variant}
+                      variant={variant}
                     />
 
                     <h3 className="text-lg font-bold tracking-tight text-slate-900">
-                      {cat.type}
+                      {MEDIA_CATEGORY_LABELS[cat.type]}
                     </h3>
                     <p className="mt-2 flex-1 text-sm leading-relaxed text-slate-500">
                       {cat.description}

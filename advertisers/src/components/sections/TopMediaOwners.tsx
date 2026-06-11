@@ -2,7 +2,9 @@ import { motion } from 'framer-motion'
 import { BadgeCheck, Clock, MapPin, Star, TrendingUp } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { fetchAgencies } from '../../services/userStore'
+import { MEDIA_CATEGORY_LABELS } from '@shared/constants'
+import type { City } from '@shared/types'
+import { fetchAgencies } from '@shared/services/publicApi'
 import type { MediaOwner } from '@shared/types'
 
 function formatPrice(amount: number): string {
@@ -25,14 +27,21 @@ function StarRating({ rating }: { rating: number }) {
   )
 }
 
-export function TopMediaOwners() {
+interface TopMediaOwnersProps {
+  city?: City
+}
+
+export function TopMediaOwners({ city = 'All UAE' }: TopMediaOwnersProps) {
   const [owners, setOwners] = useState<MediaOwner[]>([])
 
   useEffect(() => {
     let cancelled = false
     const load = async (attempt = 0) => {
       try {
-        const data = await fetchAgencies(true)
+        const data = await fetchAgencies({
+          featured: true,
+          city: city !== 'All UAE' ? city : undefined,
+        })
         if (cancelled) return
         setOwners(
           (data as MediaOwner[]).map((o) => ({
@@ -64,13 +73,13 @@ export function TopMediaOwners() {
     return () => {
       cancelled = true
     }
-  }, [])
+  }, [city])
 
   if (owners.length === 0) {
     return (
       <section id="owners" className="bg-gradient-to-b from-white to-slate-50 py-16 sm:py-24">
         <div className="mx-auto max-w-7xl px-4 text-center sm:px-6 lg:px-8">
-          <h2 className="text-3xl font-bold text-slate-900">Top Media Owners</h2>
+          <h2 className="text-3xl font-bold text-slate-900">Featured Media Owners</h2>
           <p className="mt-3 text-slate-500">Approved media owners will appear here once they join the platform.</p>
         </div>
       </section>
@@ -84,7 +93,10 @@ export function TopMediaOwners() {
           <span className="mb-3 inline-block rounded-full border border-orange-200 bg-orange-50 px-4 py-1 text-xs font-bold tracking-widest text-orange-600 uppercase">
             Verified partners
           </span>
-          <h2 className="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">Top Media Owners</h2>
+          <h2 className="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">Featured Media Owners</h2>
+          {city !== 'All UAE' && (
+            <p className="mt-2 text-sm text-slate-500">Featured in {city}</p>
+          )}
         </div>
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {owners.map((owner, i) => (
@@ -105,7 +117,9 @@ export function TopMediaOwners() {
               <p className="mt-3 line-clamp-2 text-sm text-slate-600">{owner.about}</p>
               <div className="mt-4 flex flex-wrap gap-1">
                 {owner.mediaTypes.slice(0, 3).map((t) => (
-                  <span key={t} className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600">{t}</span>
+                  <span key={t} className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600">
+                    {MEDIA_CATEGORY_LABELS[t] ?? t}
+                  </span>
                 ))}
               </div>
               <div className="mt-4 flex items-center justify-between text-sm text-slate-500">

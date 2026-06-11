@@ -7,6 +7,12 @@ import { publicRouter } from './routes/public.routes.js'
 import { advertiserRouter } from './routes/advertiser.routes.js'
 import { ownerRouter } from './routes/owner.routes.js'
 import { adminRouter } from './routes/admin.routes.js'
+import {
+  adminSubcategoryRouter,
+  ownerSubcategoryRouter,
+  publicSubcategoryRouter,
+} from './routes/subcategory.routes.js'
+import { adminCommercialRouter, ownerCommercialRouter } from './routes/commercial.routes.js'
 
 export function createApp() {
   const app = express()
@@ -29,9 +35,14 @@ export function createApp() {
 
   app.use('/api/auth', authRouter)
   app.use('/api/public', publicRouter)
+  app.use('/api/public', publicSubcategoryRouter)
   app.use('/api/advertiser', advertiserRouter)
   app.use('/api/owner', ownerRouter)
+  app.use('/api/owner', ownerSubcategoryRouter)
+  app.use('/api/owner', ownerCommercialRouter)
   app.use('/api/admin', adminRouter)
+  app.use('/api/admin', adminSubcategoryRouter)
+  app.use('/api/admin', adminCommercialRouter)
 
   app.use(errorHandler)
   return app

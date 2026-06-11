@@ -19,7 +19,7 @@ export function OwnerLoginPage() {
   const [error, setError] = useState('')
 
   if (user?.role === 'media_owner') {
-    return <Navigate to={user.ownerProfileComplete ? '/dashboard' : '/onboarding'} replace />
+    return <Navigate to={user.ownerProfileComplete ? '/dashboard/chats' : '/onboarding'} replace />
   }
   if (user?.role === 'advertiser') {
     window.location.href = ADVERTISER_LOGIN_URL
@@ -57,7 +57,7 @@ export function OwnerLoginPage() {
             <Building2 className="h-7 w-7 text-slate-900" />
           </div>
           <h1 className="text-2xl font-bold text-slate-900">
-            {isSignup ? 'Register as media owner' : 'Media owner login'}
+            {isSignup ? 'Register as publisher' : 'Publisher login'}
           </h1>
           <p className="mt-2 text-sm text-slate-600">
             Manage listings, respond to RFQs, and connect with advertisers
@@ -91,13 +91,13 @@ export function OwnerLoginPage() {
             )}
             {error && <p className="text-sm font-medium text-red-600">{error}</p>}
             <button type="submit" className="w-full rounded-xl bg-amber-400 py-3 text-sm font-bold text-slate-900 hover:bg-amber-500">
-              {isSignup ? 'Create owner account' : 'Log in'}
+              {isSignup ? 'Create publisher account' : 'Log in'}
             </button>
           </div>
         </form>
 
         <p className="mt-4 text-center text-sm text-slate-600">
-          {isSignup ? 'Already registered?' : 'New media owner?'}{' '}
+          {isSignup ? 'Already registered?' : 'New publisher?'}{' '}
           <Link to={isSignup ? '/login' : '/signup'} className="font-semibold text-amber-700 hover:text-amber-900">
             {isSignup ? 'Log in' : 'Sign up'}
           </Link>

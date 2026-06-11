@@ -2,6 +2,8 @@ import { motion } from 'framer-motion'
 import { Clock, MapPin, Star } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { formatBudgetRange } from '@shared/hooks/useSearchFilters'
+import { MEDIA_CATEGORY_COLORS, MEDIA_CATEGORY_LABELS } from '@shared/constants'
+import { normalizeMediaType } from '@shared/types'
 import type { Listing } from '@shared/types'
 
 interface RecentListingsProps {
@@ -10,13 +12,9 @@ interface RecentListingsProps {
   loading?: boolean
 }
 
-const mediaTypeColors: Record<string, string> = {
-  OOH: 'bg-indigo-100 text-indigo-700',
-  DOOH: 'bg-violet-100 text-violet-700',
-  TC: 'bg-blue-100 text-blue-700',
-  'Radio & Print': 'bg-emerald-100 text-emerald-700',
-  Influencers: 'bg-orange-100 text-orange-700',
-}
+const mediaTypeColors = Object.fromEntries(
+  Object.entries(MEDIA_CATEGORY_COLORS).map(([key, val]) => [key, val.soft]),
+) as Record<string, string>
 
 export function RecentListings({ listings, hasSearched, loading = false }: RecentListingsProps) {
   return (
@@ -70,9 +68,9 @@ export function RecentListings({ listings, hasSearched, loading = false }: Recen
                       className="h-full w-full object-cover transition-transform duration-300 hover:scale-105"
                     />
                     <span
-                      className={`absolute top-3 left-3 rounded-full px-3 py-1 text-xs font-semibold ${mediaTypeColors[listing.mediaType]}`}
+                      className={`absolute top-3 left-3 rounded-full px-3 py-1 text-xs font-semibold ${mediaTypeColors[normalizeMediaType(listing.mediaType)] ?? 'bg-slate-100 text-slate-700'}`}
                     >
-                      {listing.mediaType}
+                      {MEDIA_CATEGORY_LABELS[normalizeMediaType(listing.mediaType)]}
                     </span>
                   </div>
                   <div className="p-5">

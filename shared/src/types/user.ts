@@ -37,6 +37,9 @@ export interface QuoteRequest {
   startDate: string
   endDate: string
   message: string
+  objectives?: string
+  emirate?: string
+  permitAssistance?: boolean
   status: QuoteStatus
   quotedAmount?: number
   quotedDescription?: string

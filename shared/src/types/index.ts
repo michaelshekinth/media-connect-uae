@@ -1,4 +1,5 @@
-export type MediaType = 'OOH' | 'DOOH' | 'TC' | 'Radio & Print' | 'Influencers'
+export type { MediaType, MediaCategory, Subcategory, SubcategoryRequest } from './categories'
+export { MEDIA_CATEGORIES, MEDIA_CATEGORY_LABELS, normalizeMediaType } from './categories'
 
 export type City =
   | 'All UAE'
@@ -29,12 +30,17 @@ export interface SearchFilters {
   availability: Availability
   format: Format
   rating4Plus: boolean
+  subcategory: string
+  search?: string
 }
+
+import type { MediaType } from './categories'
 
 export interface Listing {
   id: string
   title: string
   mediaType: MediaType
+  subcategory?: string
   city: Exclude<City, 'All UAE'>
   budgetMin: number
   budgetMax: number
@@ -47,6 +53,8 @@ export interface Listing {
   format: Exclude<Format, 'all'>
   rating: number
   isDirectMedia: boolean
+  assetOwnership?: 'owned' | 'leased' | null
+  featured?: boolean
   descriptionShort: string
   galleryImages: string[]
   createdAt: string
@@ -60,8 +68,11 @@ export interface ListingDetail extends Listing {
   sizeWidth: string
   sizeHeight: string
   sizeUnit: string
-  pricingType: 'fixed' | 'range' | 'on_request'
+  pricingType: 'fixed' | 'range' | 'starting_price' | 'on_request'
   billingDuration: string
+  aboutPlacement?: string
+  objectives?: string[]
+  oohType?: string
   descriptionLong: string
   deliverables: string[]
   agency?: {

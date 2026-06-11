@@ -8,9 +8,9 @@ export function RfqPage() {
 
   return (
     <div>
-      <PageHeader title="RFQ Management" subtitle="All quote requests from advertisers to media owners" />
+      <PageHeader title="RFQ Management" subtitle="All quote requests from advertisers to publishers" />
       <DataTable
-        headers={['Campaign', 'Advertiser', 'Media Owner', 'Type', 'Budget', 'Dates', 'Status']}
+        headers={['Campaign', 'Advertiser', 'Publisher', 'Type', 'Budget', 'Dates', 'Status', 'Contact viewed']}
         rows={rfqs.map((r) => [
           r.campaignName,
           r.advertiserName,
@@ -19,6 +19,11 @@ export function RfqPage() {
           r.budgetRange,
           `${r.startDate} – ${r.endDate}`,
           <StatusBadge key="s" status={r.status} />,
+          r.contactViewedAt ? (
+            <span key="c" className="text-emerald-400" title={new Date(r.contactViewedAt).toLocaleString()}>Viewed</span>
+          ) : (
+            <span key="c" className="text-slate-500">Not viewed</span>
+          ),
         ])}
       />
     </div>

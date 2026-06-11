@@ -3,22 +3,43 @@ import { Agency } from '../models/Agency.js'
 import { Listing } from '../models/Listing.js'
 import { AdminConfig } from '../models/AdminConfig.js'
 import { listingToDetail, listingToPublic } from '../services/serializers.js'
+import { isFeaturedActive, matchesFeaturedCity } from '../utils/featured.js'
 
 export const publicRouter = Router()
 
+const LISTINGS_PAGE_SIZE = 100
+
 publicRouter.get('/listings', async (req, res) => {
-  const { mediaType, city, search } = req.query as Record<string, string>
+  const { mediaType, city, search, subcategory } = req.query as Record<string, string>
+  const page = Math.max(1, parseInt(String(req.query.page ?? '1'), 10) || 1)
   const filter: Record<string, unknown> = { status: 'approved' }
   if (mediaType && mediaType !== 'all') filter.mediaType = mediaType
-  if (city && city !== 'All UAE' && city !== 'all') filter.city = city
-  let listings = await Listing.find(filter).sort({ createdAt: -1 }).lean()
-  if (search) {
-    const q = search.toLowerCase()
-    listings = listings.filter(
-      (l) => l.title.toLowerCase().includes(q) || l.agencyName.toLowerCase().includes(q),
-    )
+  if (subcategory && subcategory !== 'all') filter.subcategory = subcategory
+  if (city && city !== 'All UAE' && city !== 'all') {
+    filter.$or = [{ city }, { emirate: city }]
   }
-  res.json(listings.map((l) => listingToPublic(l as never)))
+  if (search?.trim()) {
+    const escaped = search.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+    const regex = new RegExp(escaped, 'i')
+    filter.$and = [
+      ...(Array.isArray(filter.$and) ? filter.$and : []),
+      { $or: [{ title: regex }, { agencyName: regex }] },
+    ]
+  }
+
+  const skip = (page - 1) * LISTINGS_PAGE_SIZE
+  const [listings, total] = await Promise.all([
+    Listing.find(filter).sort({ createdAt: -1 }).skip(skip).limit(LISTINGS_PAGE_SIZE).lean(),
+    Listing.countDocuments(filter),
+  ])
+
+  res.json({
+    items: listings.map((l) => listingToPublic(l as never)),
+    page,
+    pageSize: LISTINGS_PAGE_SIZE,
+    total,
+    hasMore: skip + listings.length < total,
+  })
 })
 
 publicRouter.get('/listings/:id', async (req, res) => {
@@ -49,9 +70,13 @@ publicRouter.get('/listings/:id', async (req, res) => {
 
 publicRouter.get('/agencies', async (req, res) => {
   const featured = req.query.featured === 'true'
+  const city = req.query.city as string | undefined
   const filter: Record<string, unknown> = { status: 'approved' }
   if (featured) filter.featured = true
-  const agencies = await Agency.find(filter).sort({ createdAt: -1 }).lean()
+  let agencies = await Agency.find(filter).sort({ createdAt: -1 }).lean()
+  if (featured) {
+    agencies = agencies.filter((a) => isFeaturedActive(a) && matchesFeaturedCity(a, city ?? ''))
+  }
   res.json(
     agencies.map((a) => ({
       id: a.agencyId,
@@ -67,6 +92,8 @@ publicRouter.get('/agencies', async (req, res) => {
       headquarters: a.city,
       responseHours: a.responseHours,
       verified: a.verified,
+      featured: isFeaturedActive(a),
+      avgResponseHours: a.avgResponseHours ?? a.responseHours,
       city: a.city,
       lat: a.lat,
       lng: a.lng,
@@ -104,7 +131,9 @@ publicRouter.get('/agencies/:id', async (req, res) => {
     pricingPlans: a.pricingPlans,
     deliverables: a.deliverables,
     responseHours: a.responseHours,
+    avgResponseHours: a.avgResponseHours ?? a.responseHours,
     verified: a.verified,
+    featured: isFeaturedActive(a),
     reviews: a.reviews,
     contactEmail: a.businessEmail,
     contactPhone: a.phone,
@@ -119,4 +148,12 @@ publicRouter.get('/categories', async (_req, res) => {
 publicRouter.get('/packages', async (_req, res) => {
   const config = await AdminConfig.findOne({ key: 'platform' }).lean()
   res.json(config?.subscriptionPackages?.filter((p: { active: boolean }) => p.active) ?? [])
+})
+
+publicRouter.get('/cms', async (_req, res) => {
+  const config = await AdminConfig.findOne({ key: 'platform' }).lean()
+  res.json({
+    heroImagesByEmirate: config?.heroImagesByEmirate ?? {},
+    howItWorks: config?.howItWorks ?? [],
+  })
 })

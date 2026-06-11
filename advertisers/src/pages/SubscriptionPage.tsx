@@ -26,12 +26,15 @@ export function SubscriptionPage() {
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
-      <Breadcrumbs items={[{ label: 'Dashboard', to: '/dashboard' }, { label: 'Subscription' }]} />
+      <Breadcrumbs items={[{ label: 'Dashboard', to: '/dashboard/chats' }, { label: 'Subscription' }]} />
       <div className="mt-6 flex items-center gap-3">
         <Crown className="h-8 w-8 text-amber-500" />
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Subscription plans</h1>
           <p className="text-sm text-slate-600">Reveal media owner contact details on agency profiles</p>
+          <p className="mt-1 text-sm text-indigo-700">
+            Free trial includes <strong>1 contact reveal per month</strong> — upgrade anytime for more views.
+          </p>
         </div>
       </div>
 

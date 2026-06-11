@@ -46,6 +46,12 @@ export function filterListings(
     if (filters.rating4Plus && listing.rating < 4) {
       return false
     }
+    if (
+      filters.subcategory !== 'all' &&
+      listing.subcategory !== filters.subcategory
+    ) {
+      return false
+    }
     return true
   })
 }

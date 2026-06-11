@@ -20,14 +20,14 @@ export function NotificationsPage() {
 
   return (
     <div>
-      <PageHeader title="Send Notification" subtitle="Broadcast to advertisers, media owners, or everyone" />
+      <PageHeader title="Send Notification" subtitle="Broadcast to advertisers, publishers, or everyone" />
       <Card className="max-w-xl">
         <label className="text-sm text-slate-400">Target</label>
         <select value={target} onChange={(e) => setTarget(e.target.value as typeof target)}
           className="mt-1 w-full rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 text-sm text-white">
           <option value="all">All users</option>
           <option value="advertisers">Advertisers only</option>
-          <option value="owners">Media owners only</option>
+          <option value="owners">Publishers only</option>
         </select>
         <label className="mt-4 block text-sm text-slate-400">Title</label>
         <input value={title} onChange={(e) => setTitle(e.target.value)}

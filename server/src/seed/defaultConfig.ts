@@ -1,11 +1,28 @@
 export const defaultAdminConfig = {
   categories: [
     { id: 'ooh', label: 'OOH', mediaType: 'OOH', active: true, sortOrder: 1 },
-    { id: 'dooh', label: 'DOOH', mediaType: 'DOOH', active: true, sortOrder: 2 },
-    { id: 'tc', label: 'TC', mediaType: 'TC', active: true, sortOrder: 3 },
-    { id: 'radio_print', label: 'Radio & Print', mediaType: 'Radio & Print', active: true, sortOrder: 4 },
-    { id: 'influencers', label: 'Influencers', mediaType: 'Influencers', active: true, sortOrder: 5 },
+    { id: 'tv', label: 'TV', mediaType: 'TV', active: true, sortOrder: 2 },
+    { id: 'radio', label: 'Radio', mediaType: 'Radio', active: true, sortOrder: 3 },
+    { id: 'press', label: 'Press', mediaType: 'Press', active: true, sortOrder: 4 },
+    { id: 'content_creators', label: 'Content Creators', mediaType: 'ContentCreators', active: true, sortOrder: 5 },
   ],
+  heroImagesByEmirate: {
+    Dubai: '',
+    'Abu Dhabi': '',
+    Sharjah: '',
+    Ajman: '',
+    'Ras Al Khaimah': '',
+    Fujairah: '',
+    'Umm Al Quwain': '',
+  },
+  howItWorks: {
+    title: 'How it works',
+    steps: [
+      { title: 'Browse', description: 'Explore verified publisher inventory across the UAE.' },
+      { title: 'Request quote', description: 'Send your campaign brief to publishers.' },
+      { title: 'Chat & close', description: 'Negotiate in-platform and launch your campaign.' },
+    ],
+  },
   subscriptionPackages: [
     { id: 'pkg_starter', name: 'Starter', priceAed: 299, durationDays: 30, contactViewsIncluded: 5, features: ['5 contact reveals', 'Email support'], active: true },
     { id: 'pkg_pro', name: 'Professional', priceAed: 799, durationDays: 30, contactViewsIncluded: 25, features: ['25 contact reveals', 'Priority support'], active: true },

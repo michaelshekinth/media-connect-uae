@@ -53,6 +53,30 @@ export function CompanyDocumentsSection({ profile, onChange }: CompanyDocumentsS
         onChange={(doc) => setDoc('company_logo', 'Company logo', doc)}
         variant="compact"
       />
+      <DocumentUpload
+        label="Insurance certificate"
+        accept=".pdf,image/*"
+        documentType="insurance"
+        value={findDocument(docs, 'insurance') ?? null}
+        onChange={(doc) => setDoc('insurance', 'Insurance certificate', doc)}
+        variant="compact"
+      />
+      <DocumentUpload
+        label="Media kit"
+        accept=".pdf,image/*"
+        documentType="media_kit"
+        value={findDocument(docs, 'media_kit') ?? null}
+        onChange={(doc) => setDoc('media_kit', 'Media kit', doc)}
+        variant="compact"
+      />
+      <DocumentUpload
+        label="Rate card"
+        accept=".pdf,image/*"
+        documentType="rate_card"
+        value={findDocument(docs, 'rate_card') ?? null}
+        onChange={(doc) => setDoc('rate_card', 'Rate card', doc)}
+        variant="compact"
+      />
     </div>
   )
 }

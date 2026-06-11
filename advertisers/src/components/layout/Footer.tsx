@@ -1,13 +1,14 @@
 import { Megaphone } from 'lucide-react'
 import { Link, useLocation } from 'react-router-dom'
-import { MEDIA_TYPES, UAE_CITIES } from '@shared/constants'
+import { MEDIA_CATEGORIES, MEDIA_CATEGORY_LABELS, UAE_CITIES } from '@shared/constants'
 import { ADMIN_LOGIN_URL, MEDIA_OWNER_LOGIN_URL } from '@shared/constants/portals'
 
 const platformLinks = [
   { label: 'Browse Media', href: '#search' },
+  { label: 'List Your Media', href: '/list-media' },
   { label: 'Recent Listings', href: '#listings' },
   { label: 'Featured Locations', href: '#locations' },
-  { label: 'Top Media Owners', href: '#owners' },
+  { label: 'Featured Media Owners', href: '#owners' },
 ]
 
 const companyLinks = [
@@ -95,10 +96,10 @@ export function Footer() {
               Media types
             </h3>
             <ul className="grid grid-cols-2 gap-x-2 gap-y-1.5">
-              {MEDIA_TYPES.map((type) => (
+              {MEDIA_CATEGORIES.map((type) => (
                 <li key={type}>
                   <a href="#search" className="text-sm text-slate-400 transition-colors hover:text-orange-400">
-                    {type}
+                    {MEDIA_CATEGORY_LABELS[type]}
                   </a>
                 </li>
               ))}

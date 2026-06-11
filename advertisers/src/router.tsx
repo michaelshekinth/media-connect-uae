@@ -9,6 +9,7 @@ import { ListingDetailPage } from './pages/ListingDetailPage'
 import { DashboardPage } from './pages/DashboardPage'
 import { AdvertiserLoginPage } from './pages/AdvertiserLoginPage'
 import { LandingPage } from './pages/LandingPage'
+import { ListMediaPage } from './pages/ListMediaPage'
 import { NotFoundPage } from './pages/NotFoundPage'
 import { ProfilePage } from './pages/ProfilePage'
 import { SubscriptionPage } from './pages/SubscriptionPage'
@@ -29,6 +30,7 @@ export const router = createBrowserRouter([
         element: <PublicLayout />,
         children: [
           { index: true, element: <LandingPage /> },
+          { path: 'list-media', element: <ListMediaPage /> },
           { path: 'login', element: <AdvertiserLoginPage /> },
           { path: 'signup', element: <AdvertiserLoginPage /> },
           { path: 'listing/:id', element: <ListingDetailPage /> },

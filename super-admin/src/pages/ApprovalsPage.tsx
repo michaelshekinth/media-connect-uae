@@ -1,21 +1,23 @@
 import { useCallback, useEffect, useState } from 'react'
 import {
   adminApproveListing, adminApproveProfile, adminRejectListing, adminRejectProfile,
-  getAllPendingListings, getPendingOwnerProfiles, getMediaOwnerDetail,
+  getAllPendingListings, getPendingEditListings, getPendingOwnerProfiles, getMediaOwnerDetail,
 } from '../services/adminService'
 import { useAdminAuth } from '../context/AdminAuthContext'
 import { DataTable, EmptyState, PageHeader, RejectModal, StatusBadge } from '../components/ui'
 
 export function ApprovalsPage() {
   const { session } = useAdminAuth()
-  const [tab, setTab] = useState<'profiles' | 'listings'>('profiles')
+  const [tab, setTab] = useState<'profiles' | 'listings' | 'edits'>('profiles')
   const [profiles, setProfiles] = useState<Awaited<ReturnType<typeof getPendingOwnerProfiles>>>([])
   const [listings, setListings] = useState<Awaited<ReturnType<typeof getAllPendingListings>>>([])
+  const [editListings, setEditListings] = useState<Awaited<ReturnType<typeof getPendingEditListings>>>([])
   const [rejectTarget, setRejectTarget] = useState<{ type: 'profile' | 'listing'; agencyId: string; listingId?: string } | null>(null)
 
   const refresh = useCallback(() => {
     getPendingOwnerProfiles().then(setProfiles)
     getAllPendingListings().then(setListings)
+    getPendingEditListings().then(setEditListings)
   }, [])
 
   useEffect(() => { refresh() }, [refresh])
@@ -46,7 +48,7 @@ export function ApprovalsPage() {
 
   return (
     <div>
-      <PageHeader title="Pending Approvals" subtitle="Review media owner profiles and listings" />
+      <PageHeader title="Pending Approvals" subtitle="Review publisher profiles and listings" />
       <div className="mb-4 flex gap-2">
         <button type="button" onClick={() => setTab('profiles')}
           className={`rounded-lg px-4 py-2 text-sm font-semibold ${tab === 'profiles' ? 'bg-slate-700 text-white' : 'text-slate-400'}`}>
@@ -55,6 +57,10 @@ export function ApprovalsPage() {
         <button type="button" onClick={() => setTab('listings')}
           className={`rounded-lg px-4 py-2 text-sm font-semibold ${tab === 'listings' ? 'bg-slate-700 text-white' : 'text-slate-400'}`}>
           Listings ({listings.length})
+        </button>
+        <button type="button" onClick={() => setTab('edits')}
+          className={`rounded-lg px-4 py-2 text-sm font-semibold ${tab === 'edits' ? 'bg-slate-700 text-white' : 'text-slate-400'}`}>
+          Listing edits ({editListings.length})
         </button>
       </div>
 
@@ -72,7 +78,7 @@ export function ApprovalsPage() {
 
       {tab === 'listings' && (
         <DataTable
-          headers={['Title', 'Owner', 'Category', 'City', 'Status', 'Actions']}
+          headers={['Title', 'Publisher', 'Category', 'City', 'Status', 'Actions']}
           rows={listings.map(({ listing, agencyId, companyName }) => [
             listing.title,
             companyName,
@@ -82,6 +88,25 @@ export function ApprovalsPage() {
             <div key="a" className="flex gap-2">
               <button type="button" onClick={() => handleApproveListing(agencyId, listing.id)}
                 className="rounded bg-emerald-600 px-2 py-1 text-xs font-semibold text-white">Approve</button>
+              <button type="button" onClick={() => setRejectTarget({ type: 'listing', agencyId, listingId: listing.id })}
+                className="rounded bg-red-600/80 px-2 py-1 text-xs font-semibold text-white">Reject</button>
+            </div>,
+          ])}
+        />
+      )}
+
+      {tab === 'edits' && (
+        <DataTable
+          headers={['Title', 'Publisher', 'Category', 'City', 'Status', 'Actions']}
+          rows={editListings.map(({ listing, agencyId, companyName }) => [
+            listing.title,
+            companyName,
+            listing.mediaCategory,
+            listing.city,
+            <StatusBadge key="s" status={listing.status} />,
+            <div key="a" className="flex gap-2">
+              <button type="button" onClick={() => handleApproveListing(agencyId, listing.id)}
+                className="rounded bg-emerald-600 px-2 py-1 text-xs font-semibold text-white">Approve edit</button>
               <button type="button" onClick={() => setRejectTarget({ type: 'listing', agencyId, listingId: listing.id })}
                 className="rounded bg-red-600/80 px-2 py-1 text-xs font-semibold text-white">Reject</button>
             </div>,

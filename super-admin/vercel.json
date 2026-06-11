@@ -1,7 +1,7 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "installCommand": "npm install",
-  "buildCommand": "vite build --config super-admin/vite.config.ts",
+  "buildCommand": "npm run build:admin",
   "outputDirectory": "dist/super-admin",
   "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
 }

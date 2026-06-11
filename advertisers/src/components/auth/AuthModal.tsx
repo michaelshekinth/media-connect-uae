@@ -9,6 +9,10 @@ export function AuthModal() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
+  const [companyName, setCompanyName] = useState('')
+  const [phone, setPhone] = useState('')
+  const [industry, setIndustry] = useState('')
+  const [marketingConsent, setMarketingConsent] = useState(false)
   const [error, setError] = useState('')
 
   if (!authMode) return null
@@ -36,7 +40,9 @@ export function AuthModal() {
       return
     }
 
-    const err = await (isSignup ? signup(email, password) : login(email, password))
+    const err = await (isSignup
+      ? signup(email, password, { companyName, phone, industry, marketingConsent })
+      : login(email, password))
     if (err) {
       setError(err)
       return
@@ -96,11 +102,39 @@ export function AuthModal() {
                 className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 focus:outline-none" />
             </div>
             {isSignup && (
-              <div>
-                <label className="mb-1.5 block text-sm font-medium text-slate-700">Confirm password</label>
-                <input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="••••••••"
-                  className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 focus:outline-none" />
-              </div>
+              <>
+                <div>
+                  <label className="mb-1.5 block text-sm font-medium text-slate-700">Company</label>
+                  <input value={companyName} onChange={(e) => setCompanyName(e.target.value)} placeholder="Your company name"
+                    className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 focus:outline-none" />
+                </div>
+                <div>
+                  <label className="mb-1.5 block text-sm font-medium text-slate-700">Phone</label>
+                  <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+971 50 000 0000"
+                    className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 focus:outline-none" />
+                </div>
+                <div>
+                  <label className="mb-1.5 block text-sm font-medium text-slate-700">Industry</label>
+                  <input value={industry} onChange={(e) => setIndustry(e.target.value)} placeholder="e.g. Retail, F&B"
+                    className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 focus:outline-none" />
+                </div>
+                <div>
+                  <label className="mb-1.5 block text-sm font-medium text-slate-700">Confirm password</label>
+                  <input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="••••••••"
+                    className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 focus:outline-none" />
+                </div>
+                <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+                  <input
+                    type="checkbox"
+                    checked={marketingConsent}
+                    onChange={(e) => setMarketingConsent(e.target.checked)}
+                    className="mt-0.5 h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                  />
+                  <span className="text-sm text-slate-600">
+                    I agree to receive product updates and marketing emails
+                  </span>
+                </label>
+              </>
             )}
             {error && <p className="text-sm font-medium text-red-600">{error}</p>}
             <button type="submit" className="w-full rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 py-3 text-sm font-semibold text-white shadow-lg hover:from-indigo-700 hover:to-violet-700">

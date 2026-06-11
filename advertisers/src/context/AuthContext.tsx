@@ -18,7 +18,11 @@ interface AuthContextValue {
   user: User | null
   loading: boolean
   login: (email: string, password: string) => Promise<string | null>
-  signup: (email: string, password: string) => Promise<string | null>
+  signup: (
+    email: string,
+    password: string,
+    fields?: authService.AdvertiserSignupFields,
+  ) => Promise<string | null>
   logout: () => void
   updateProfile: (updates: Partial<User>) => Promise<void>
   changePassword: (current: string, next: string) => Promise<string | null>
@@ -74,8 +78,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   )
 
   const signup = useCallback(
-    async (email: string, password: string) => {
-      const result = await authService.signupAdvertiser(email, password)
+    async (
+      email: string,
+      password: string,
+      fields?: authService.AdvertiserSignupFields,
+    ) => {
+      const result = await authService.signupAdvertiser(email, password, fields)
       if (result.error) return result.error
       setUser(result.user!)
       setAuthMode(null)

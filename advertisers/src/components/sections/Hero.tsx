@@ -1,7 +1,7 @@
 import { motion } from 'framer-motion'
 import { CheckCircle2, Play } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
-import { MEDIA_TYPES } from '@shared/constants'
+import { MEDIA_CATEGORIES, MEDIA_CATEGORY_COLORS, MEDIA_CATEGORY_LABELS } from '@shared/constants'
 
 const HERO_POSTER =
   'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=1920&q=85'
@@ -23,18 +23,12 @@ const trustItems = [
   'Verified media owners',
 ]
 
-const chipVariants: Record<
-  (typeof MEDIA_TYPES)[number],
-  'indigo' | 'violet' | 'blue' | 'emerald' | 'orange'
-> = {
-  OOH: 'indigo',
-  DOOH: 'violet',
-  TC: 'blue',
-  'Radio & Print': 'emerald',
-  Influencers: 'orange',
+interface HeroProps {
+  heroImage?: string
+  selectedEmirate?: string | null
 }
 
-function HeroVideoRotator() {
+function HeroVideoRotator({ poster }: { poster: string }) {
   const [activeIndex, setActiveIndex] = useState(0)
   const videoRefs = useRef<(HTMLVideoElement | null)[]>([])
 
@@ -69,7 +63,7 @@ function HeroVideoRotator() {
           muted
           loop
           playsInline
-          poster={HERO_POSTER}
+          poster={poster}
           className={`hero-video absolute inset-0 h-full w-full object-cover transition-opacity duration-[2000ms] ${
             i === activeIndex ? 'opacity-100' : 'opacity-0'
           }`}
@@ -82,8 +76,10 @@ function HeroVideoRotator() {
   )
 }
 
-function HeroBackground() {
+function HeroBackground({ heroImage, selectedEmirate }: HeroProps) {
   const [reduceMotion, setReduceMotion] = useState(false)
+  const poster = heroImage || HERO_POSTER
+  const useEmirateImage = !!selectedEmirate && heroImage && heroImage !== HERO_POSTER
 
   useEffect(() => {
     const mq = window.matchMedia('(prefers-reduced-motion: reduce)')
@@ -95,11 +91,17 @@ function HeroBackground() {
 
   return (
     <div className="pointer-events-none absolute inset-0 overflow-hidden">
-      {!reduceMotion ? (
-        <HeroVideoRotator />
+      {useEmirateImage ? (
+        <img
+          src={heroImage}
+          alt=""
+          className="hero-ken-burns absolute inset-0 h-full w-full object-cover transition-opacity duration-700"
+        />
+      ) : !reduceMotion ? (
+        <HeroVideoRotator poster={poster} />
       ) : (
         <img
-          src={HERO_POSTER}
+          src={poster}
           alt=""
           className="hero-ken-burns absolute inset-0 h-full w-full object-cover"
         />
@@ -123,10 +125,10 @@ function HeroBackground() {
   )
 }
 
-export function Hero() {
+export function Hero({ heroImage, selectedEmirate }: HeroProps) {
   return (
     <section className="relative min-h-[88vh] overflow-hidden pb-32 pt-28 sm:min-h-[90vh] sm:pb-40 sm:pt-36">
-      <HeroBackground />
+      <HeroBackground heroImage={heroImage} selectedEmirate={selectedEmirate} />
 
       <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-4xl text-center">
@@ -141,6 +143,9 @@ export function Hero() {
                 <span className="relative inline-flex h-2 w-2 rounded-full bg-orange-400" />
               </span>
               UAE&apos;s #1 Media Marketplace
+              {selectedEmirate && (
+                <span className="ml-1 border-l border-white/30 pl-2 text-orange-200">{selectedEmirate}</span>
+              )}
             </span>
           </motion.div>
 
@@ -162,9 +167,9 @@ export function Hero() {
             transition={{ duration: 0.7, delay: 0.2 }}
             className="mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-white/85 sm:text-xl"
           >
-            Browse billboards, digital screens, TV, radio, print, and influencers
-            across the UAE — compare options, filter by city and budget, and connect
-            with verified media owners in one place.
+            Browse OOH, TV, radio, press, and content creators across the UAE — compare
+            options, filter by emirate and budget, and connect with verified media owners
+            in one place.
           </motion.p>
 
           <motion.div
@@ -173,16 +178,16 @@ export function Hero() {
             transition={{ duration: 0.7, delay: 0.3 }}
             className="mt-8 flex flex-wrap justify-center gap-2.5"
           >
-            {MEDIA_TYPES.map((type, i) => (
+            {MEDIA_CATEGORIES.map((type, i) => (
               <motion.span
                 key={type}
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: 0.35 + i * 0.06 }}
-                className={`hero-chip hero-chip--${chipVariants[type]} px-5 py-2.5 text-sm font-bold tracking-wide text-white`}
+                className={`hero-chip hero-chip--${MEDIA_CATEGORY_COLORS[type].chip} px-5 py-2.5 text-sm font-bold tracking-wide text-white`}
               >
                 <span className="hero-chip__dot" aria-hidden />
-                {type}
+                {MEDIA_CATEGORY_LABELS[type]}
               </motion.span>
             ))}
           </motion.div>

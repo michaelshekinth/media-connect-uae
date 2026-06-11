@@ -10,7 +10,27 @@ import { serializeUser } from '../services/serializers.js'
 export const authRouter = Router()
 
 authRouter.post('/advertiser/signup', async (req, res) => {
-  const { email, password } = req.body as { email?: string; password?: string }
+  const {
+    email,
+    password,
+    fullName,
+    phone,
+    companyName,
+    jobTitle,
+    industry,
+    marketingConsent,
+    consentVersion,
+  } = req.body as {
+    email?: string
+    password?: string
+    fullName?: string
+    phone?: string
+    companyName?: string
+    jobTitle?: string
+    industry?: string
+    marketingConsent?: boolean
+    consentVersion?: string
+  }
   if (!email || !password || password.length < 6) {
     return res.status(400).json({ error: 'Valid email and password (6+ chars) required' })
   }
@@ -19,7 +39,14 @@ authRouter.post('/advertiser/signup', async (req, res) => {
   const user = await User.create({
     email: email.toLowerCase(),
     passwordHash: await bcrypt.hash(password, 10),
-    fullName: email.split('@')[0],
+    fullName: fullName?.trim() || email.split('@')[0],
+    phone: phone ?? '',
+    companyName: companyName ?? '',
+    jobTitle: jobTitle ?? '',
+    industry: industry ?? '',
+    marketingConsent: !!marketingConsent,
+    consentAcceptedAt: new Date().toISOString(),
+    consentVersion: consentVersion ?? 'v1',
     role: 'advertiser',
   })
   const token = signToken({ sub: user._id.toString(), email: user.email, role: 'advertiser' })

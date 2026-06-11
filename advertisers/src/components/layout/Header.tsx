@@ -6,13 +6,14 @@ import {
   LogOut,
   Megaphone,
   Menu,
+  Search,
   Shield,
   User,
   X,
 } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import { ADMIN_LOGIN_URL, MEDIA_OWNER_LOGIN_URL } from '@shared/constants/portals'
+import { ADMIN_LOGIN_URL } from '@shared/constants/portals'
 import { useAuth } from '../../context/AuthContext'
 import {
   getPendingQuoteCount,
@@ -101,15 +102,18 @@ export function Header({ variant = 'landing' }: HeaderProps) {
   const subscription = user?.role === 'advertiser' ? getSubscription() : null
   const glass = scrolled || !isLanding
 
+  const listMediaLink = (
+    <Link to="/list-media" className={navBtnClass(glass, 'outline')}>
+      List Media
+    </Link>
+  )
+
   const guestDesktopLinks = (
     <>
       <Link to="/login" className={navBtnClass(glass)}>
         <span className="hidden sm:inline">Advertiser login</span>
         <span className="sm:hidden">Login</span>
       </Link>
-      <a href={MEDIA_OWNER_LOGIN_URL} className={`${navBtnClass(glass, 'outline')} hidden sm:inline-flex`}>
-        Media owner
-      </a>
       {showAdminLink && (
         <a href={ADMIN_LOGIN_URL} className={`${navBtnClass(glass)} hidden lg:inline-flex gap-1`}>
           <Shield className="h-3.5 w-3.5 shrink-0" /> Admin
@@ -123,16 +127,16 @@ export function Header({ variant = 'landing' }: HeaderProps) {
 
   const guestMobileLinks = (
     <div className="flex flex-col gap-1 p-3">
-      <Link to="/login" className={`${navBtnClass(true)} w-full justify-start`} onClick={() => setMobileNavOpen(false)}>
-        Advertiser login
-      </Link>
-      <a
-        href={MEDIA_OWNER_LOGIN_URL}
+      <Link
+        to="/list-media"
         className={`${navBtnClass(true, 'outline')} w-full justify-start`}
         onClick={() => setMobileNavOpen(false)}
       >
-        Media owner login
-      </a>
+        List Media
+      </Link>
+      <Link to="/login" className={`${navBtnClass(true)} w-full justify-start`} onClick={() => setMobileNavOpen(false)}>
+        Advertiser login
+      </Link>
       {showAdminLink && (
         <a
           href={ADMIN_LOGIN_URL}
@@ -172,10 +176,12 @@ export function Header({ variant = 'landing' }: HeaderProps) {
 
         {/* Desktop nav */}
         <nav className="hidden items-center gap-1.5 md:flex md:gap-2">
+          {listMediaLink}
           {user && user.role === 'advertiser' && (
             <>
-              <Link to="/browse" className={`${navBtnClass(glass)} hidden lg:inline-flex`}>
-                Browse
+              <Link to="/dashboard/chats" className={navBtnClass(glass)}>
+                <LayoutDashboard className="mr-1.5 inline h-4 w-4" />
+                Dashboard
               </Link>
               <Link
                 to="/subscription"
@@ -188,7 +194,7 @@ export function Header({ variant = 'landing' }: HeaderProps) {
                 </span>
               </Link>
               <Link
-                to="/dashboard"
+                to="/dashboard/chats"
                 className="relative inline-flex h-9 w-9 items-center justify-center rounded-lg text-slate-600 hover:bg-slate-100"
                 title="Notifications"
               >
@@ -218,7 +224,14 @@ export function Header({ variant = 'landing' }: HeaderProps) {
                   <div className="absolute right-0 mt-2 w-52 rounded-xl border border-slate-200 bg-white py-1 shadow-xl">
                     <p className="border-b border-slate-100 px-4 py-2 text-xs text-slate-500">{user.email}</p>
                     <Link
-                      to="/dashboard"
+                      to="/browse"
+                      onClick={() => setMenuOpen(false)}
+                      className="flex items-center gap-2 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50"
+                    >
+                      <Search className="h-4 w-4" /> Browse
+                    </Link>
+                    <Link
+                      to="/dashboard/chats"
                       onClick={() => setMenuOpen(false)}
                       className="flex items-center gap-2 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50"
                     >
@@ -246,11 +259,6 @@ export function Header({ variant = 'landing' }: HeaderProps) {
               </div>
             </>
           )}
-          {user && user.role === 'media_owner' && (
-            <a href={MEDIA_OWNER_LOGIN_URL} className={navBtnClass(glass)}>
-              Owner Dashboard
-            </a>
-          )}
           {!user && guestDesktopLinks}
         </nav>
 
@@ -259,7 +267,7 @@ export function Header({ variant = 'landing' }: HeaderProps) {
           {user && user.role === 'advertiser' && (
             <>
               <Link
-                to="/dashboard"
+                to="/dashboard/chats"
                 className="relative inline-flex h-9 w-9 items-center justify-center rounded-lg text-slate-600 hover:bg-slate-100"
               >
                 <Bell className="h-5 w-5" />
@@ -296,6 +304,13 @@ export function Header({ variant = 'landing' }: HeaderProps) {
             <div className="flex flex-col gap-1 p-3">
               <p className="px-3 py-1 text-xs text-slate-500">{user.email}</p>
               <Link
+                to="/list-media"
+                className={`${navBtnClass(true, 'outline')} w-full justify-start`}
+                onClick={() => setMobileNavOpen(false)}
+              >
+                List Media
+              </Link>
+              <Link
                 to="/browse"
                 className={`${navBtnClass(true)} w-full justify-start`}
                 onClick={() => setMobileNavOpen(false)}
@@ -303,18 +318,18 @@ export function Header({ variant = 'landing' }: HeaderProps) {
                 Browse
               </Link>
               <Link
+                to="/dashboard/chats"
+                className={`${navBtnClass(true)} w-full justify-start`}
+                onClick={() => setMobileNavOpen(false)}
+              >
+                Dashboard
+              </Link>
+              <Link
                 to="/subscription"
                 className={`${navBtnClass(true)} w-full justify-start gap-2 text-amber-700`}
                 onClick={() => setMobileNavOpen(false)}
               >
                 <Crown className="h-4 w-4" /> Subscription
-              </Link>
-              <Link
-                to="/dashboard"
-                className={`${navBtnClass(true)} w-full justify-start`}
-                onClick={() => setMobileNavOpen(false)}
-              >
-                Dashboard
               </Link>
               <Link
                 to="/profile"
@@ -333,17 +348,6 @@ export function Header({ variant = 'landing' }: HeaderProps) {
               >
                 Log out
               </button>
-            </div>
-          )}
-          {user && user.role === 'media_owner' && (
-            <div className="p-3">
-              <a
-                href={MEDIA_OWNER_LOGIN_URL}
-                className={`${navBtnClass(true)} w-full`}
-                onClick={() => setMobileNavOpen(false)}
-              >
-                Owner Dashboard
-              </a>
             </div>
           )}
           {!user && guestMobileLinks}

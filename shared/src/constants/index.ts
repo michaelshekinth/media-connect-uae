@@ -1,12 +1,8 @@
-import type { BudgetRange, City, MediaType, SearchFilters } from '../types'
+import type { BudgetRange, City, SearchFilters } from '../types'
+import { MEDIA_CATEGORIES, MEDIA_CATEGORY_LABELS, type MediaCategory, type MediaType } from '../types/categories'
 
-export const MEDIA_TYPES: MediaType[] = [
-  'OOH',
-  'DOOH',
-  'TC',
-  'Radio & Print',
-  'Influencers',
-]
+export { MEDIA_CATEGORIES, MEDIA_CATEGORY_LABELS, type MediaCategory, type MediaType }
+export const MEDIA_TYPES: MediaType[] = [...MEDIA_CATEGORIES]
 
 export const CITIES: City[] = [
   'All UAE',
@@ -41,6 +37,19 @@ export const DEFAULT_FILTERS: SearchFilters = {
   availability: 'all',
   format: 'all',
   rating4Plus: false,
+  subcategory: 'all',
+}
+
+/** Tailwind badge classes keyed by PDF V1 media category */
+export const MEDIA_CATEGORY_COLORS: Record<
+  MediaCategory,
+  { solid: string; soft: string; chip: 'indigo' | 'violet' | 'blue' | 'emerald' | 'orange' }
+> = {
+  OOH: { solid: 'bg-indigo-600', soft: 'bg-indigo-100 text-indigo-700', chip: 'indigo' },
+  TV: { solid: 'bg-blue-600', soft: 'bg-blue-100 text-blue-700', chip: 'blue' },
+  Radio: { solid: 'bg-emerald-600', soft: 'bg-emerald-100 text-emerald-700', chip: 'emerald' },
+  Press: { solid: 'bg-violet-600', soft: 'bg-violet-100 text-violet-700', chip: 'violet' },
+  ContentCreators: { solid: 'bg-orange-500', soft: 'bg-orange-100 text-orange-700', chip: 'orange' },
 }
 
 export const CITY_CONFIGS: Record<

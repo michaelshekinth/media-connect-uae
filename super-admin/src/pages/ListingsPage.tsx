@@ -12,7 +12,7 @@ export function ListingsPage() {
 
   return (
     <div>
-      <PageHeader title="Listings" subtitle="All media owner listings across the platform" />
+      <PageHeader title="Listings" subtitle="All publisher listings across the platform" />
       <div className="mb-4 flex flex-wrap gap-2">
         {['', 'pending_approval', 'approved', 'rejected', 'draft'].map((s) => (
           <button key={s || 'all'} type="button" onClick={() => setStatus(s)}

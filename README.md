@@ -88,27 +88,69 @@ VITE_ADMIN_URL=http://localhost:5174
 1. Create a free [MongoDB Atlas](https://www.mongodb.com/atlas) cluster and copy the connection string.
 2. Open [Deploy to Render](https://render.com/deploy?repo=https://github.com/michaelshekinth/media-connect-uae) (uses `render.yaml` in this repo).
 3. Set **`MONGODB_URI`** when prompted (`JWT_SECRET` is auto-generated).
-4. After deploy, your API URL will be **`https://media-connect-api.onrender.com`** (health: `/api/health`).
+4. After deploy, your API URL will be **`https://media-connect-uae.onrender.com`** (health: `/api/health`).
 
 > Render free services sleep after ~15 min idle; the first request after sleep may take 30–60s.
 
 ### Deploy frontends to Vercel
 
-Create **three Vercel projects** from the same GitHub repo:
+Create **three Vercel projects** from the same GitHub repo (repo root as project root). Each project uses its own `vercel.json`:
 
-| Vercel project | Root directory | Build |
-|----------------|----------------|-------|
-| `media-connect-uae` | `advertisers` | `vite build --config advertisers/vite.config.ts` |
-| `media-owner` | `media-owner` | `vite build --config media-owner/vite.config.ts` |
-| `super-admin` | `super-admin` | `vite build --config super-admin/vite.config.ts` |
+| Vercel project | Config file | Production URL |
+|----------------|-------------|----------------|
+| `media-connect-uae` | `vercel.json` (root) | https://media-connect-uae.vercel.app |
+| `media-owner` | `media-owner/vercel.json` | https://media-owner.vercel.app |
+| `super-admin` | `super-admin/vercel.json` | https://super-admin-seven-beta.vercel.app |
 
-**All three frontends** need this env var:
+Deploy owner/admin with API URL baked in:
+
+```bash
+VITE_API_URL=https://media-connect-uae.onrender.com npx vercel build --prod --local-config media-owner/vercel.json
+npx vercel deploy --prebuilt --prod --local-config media-owner/vercel.json
+```
+
+**All three frontends** need this env var on Vercel (Production):
 
 ```env
-VITE_API_URL=https://media-connect-api.onrender.com
+VITE_API_URL=https://media-connect-uae.onrender.com
 ```
 
 (No trailing slash — points to the Render API.)
+
+### Test accounts (E2E)
+
+Seed repeatable demo users (does not run on server boot):
+
+```bash
+npm run seed:demo              # approved owner, ready for listings
+npm run seed:demo -- --reset-flow   # owner back to submitted, clears test data
+```
+
+| Role | Email | Password |
+|------|-------|----------|
+| Super admin | `admin@mediaconnect.ae` | `admin123` |
+| Advertiser | `test.advertiser@media.ae` | `TestMedia2026!` |
+| Media owner | `test.owner@media.ae` | `TestMedia2026!` |
+
+**Production warning:** `seed:demo` is for local/E2E only. Never run it against a production database — it creates known passwords.
+
+After deploying taxonomy changes:
+
+```bash
+npm run migrate:categories
+npm run migrate:lead-status
+```
+
+### E2E tests (Playwright)
+
+```bash
+npm install
+npx playwright install chromium
+npm run dev:all          # for local full flow
+npm run test:e2e:smoke   # production smoke (Vercel + Render)
+npm run test:e2e:local   # full marketplace flow on localhost
+npm run test:e2e         # both
+```
 
 ### Scripts
 
@@ -120,5 +162,11 @@ VITE_API_URL=https://media-connect-api.onrender.com
 | `npm run dev:api` | Express API on :4000 |
 | `npm run dev:all` | All four services concurrently |
 | `npm run seed` | Seed admin user + platform config |
+| `npm run seed:demo` | Seed E2E test advertiser + media owner (local only) |
+| `npm run migrate:categories` | Migrate listings to 5-category taxonomy + seed subcategories |
+| `npm run migrate:lead-status` | Normalize legacy quote/lead status values |
+| `npm run test:e2e` | Playwright smoke + local full flow |
 | `npm run build` | Build all three frontends |
+| `npm run build:owner` | Build media owner app only |
+| `npm run build:admin` | Build super admin app only |
 | `npm run build:api` | Compile server TypeScript |

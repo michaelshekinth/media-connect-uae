@@ -1,3 +1,4 @@
+import type { IncomingMessage, ServerResponse } from 'node:http'
 import { resolve } from 'node:path'
 import { defineConfig, type Plugin } from 'vite'
 import react from '@vitejs/plugin-react'
@@ -19,7 +20,7 @@ function adminSpaEntry(): Plugin {
     return true
   }
 
-  const middleware: Connect.NextHandleFunction = (req, _res, next) => {
+  const middleware = (req: IncomingMessage, _res: ServerResponse, next: () => void) => {
     const pathname = req.url?.split('?')[0] ?? ''
     if (shouldServeAdminHtml(pathname)) {
       req.url = '/index.html'

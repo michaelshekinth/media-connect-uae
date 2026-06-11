@@ -33,11 +33,30 @@ export async function loginAdvertiser(email: string, password: string): Promise<
   }
 }
 
-export async function signupAdvertiser(email: string, password: string): Promise<{ user?: User; error?: string }> {
+export interface AdvertiserSignupFields {
+  companyName?: string
+  phone?: string
+  industry?: string
+  marketingConsent?: boolean
+}
+
+export async function signupAdvertiser(
+  email: string,
+  password: string,
+  fields: AdvertiserSignupFields = {},
+): Promise<{ user?: User; error?: string }> {
   try {
     const data = await apiFetch<{ token: string; user: User }>('/auth/advertiser/signup', {
       method: 'POST',
-      body: JSON.stringify({ email, password }),
+      body: JSON.stringify({
+        email,
+        password,
+        companyName: fields.companyName,
+        phone: fields.phone,
+        industry: fields.industry,
+        marketingConsent: fields.marketingConsent,
+        consentVersion: 'v1',
+      }),
       auth: false,
     })
     setToken('advertiser', data.token)

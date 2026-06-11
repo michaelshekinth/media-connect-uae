@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { Navigate, useNavigate, useParams } from 'react-router-dom'
 import { ActivityFeed } from '../components/dashboard/ActivityFeed'
 import { ChatsPanel } from '../components/dashboard/ChatsPanel'
 import { Favourites } from '../components/dashboard/Favourites'
@@ -13,9 +13,9 @@ import {
 import type { DashboardTab } from '@shared/types/user'
 
 const tabs: { id: DashboardTab; label: string }[] = [
+  { id: 'chats', label: 'Chats' },
   { id: 'activity', label: 'Activity' },
   { id: 'search-history', label: 'Search history' },
-  { id: 'chats', label: 'Chats' },
   { id: 'quotes', label: 'Quote history' },
   { id: 'favourites', label: 'Favourites' },
 ]
@@ -23,7 +23,7 @@ const tabs: { id: DashboardTab; label: string }[] = [
 export function DashboardPage() {
   const { tab } = useParams<{ tab?: string }>()
   const navigate = useNavigate()
-  const activeTab = (tabs.find((t) => t.id === tab)?.id ?? 'activity') as DashboardTab
+  const activeTab = (tabs.find((t) => t.id === tab)?.id ?? 'chats') as DashboardTab
   const [stats, setStats] = useState({ quotes: 0, favorites: 0, chats: 0 })
 
   useEffect(() => {
@@ -32,8 +32,12 @@ export function DashboardPage() {
     )
   }, [activeTab])
 
+  if (!tab) {
+    return <Navigate to="/dashboard/chats" replace />
+  }
+
   const setTab = (id: DashboardTab) => {
-    navigate(id === 'activity' ? '/dashboard' : `/dashboard/${id}`)
+    navigate(`/dashboard/${id}`)
   }
 
   const statCards = [

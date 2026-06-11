@@ -41,7 +41,7 @@ export function FeesListingPage() {
 
   return (
     <div>
-      <PageHeader title="Listing Fees" subtitle="Global and per-media-owner listing fee rules"
+      <PageHeader title="Listing Fees" subtitle="Global and per-publisher listing fee rules"
         action={<button type="button" onClick={addRule} className="rounded-lg bg-amber-500 px-4 py-2 text-sm font-semibold text-slate-900">Add rule</button>} />
       <div className="space-y-4">
         {rules.map((r) => (
@@ -50,7 +50,7 @@ export function FeesListingPage() {
               <select value={r.scope} onChange={(e) => updateRule(r.id, { scope: e.target.value as ListingFeeRule['scope'] })}
                 className="rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 text-sm text-white">
                 <option value="global">Global</option>
-                <option value="owner">Media owner</option>
+                <option value="owner">Publisher</option>
               </select>
               {r.scope === 'owner' && (
                 <select value={r.ownerId ?? ''} onChange={(e) => updateRule(r.id, { ownerId: e.target.value })}
@@ -82,7 +82,7 @@ export function FeesListingPage() {
           <p className="mb-2 text-sm text-slate-400">Quick add partner override:</p>
           <select onChange={(e) => { if (e.target.value) { addOwnerRule(e.target.value); e.target.value = '' } }}
             className="rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 text-sm text-white">
-            <option value="">Add fee for media owner...</option>
+            <option value="">Add fee for publisher...</option>
             {owners.map((o) => <option key={o.agencyId} value={o.agencyId}>{o.companyName}</option>)}
           </select>
         </div>

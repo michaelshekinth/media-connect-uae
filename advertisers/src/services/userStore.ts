@@ -8,7 +8,6 @@ import type {
   SearchHistoryEntry,
 } from '@shared/types/user'
 import type { AdvertiserSubscription } from '@shared/types/admin'
-import type { Listing } from '@shared/types'
 import { apiFetch, getToken } from '@shared/services/apiClient'
 
 const role = 'advertiser' as const

@@ -1,18 +1,16 @@
 import { Heart } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { formatBudgetRange } from '@shared/hooks/useSearchFilters'
+import { MEDIA_CATEGORY_COLORS, MEDIA_CATEGORY_LABELS } from '@shared/constants'
+import { normalizeMediaType } from '@shared/types'
 import { getToken } from '@shared/services/apiClient'
 import { isFavoriteListing, toggleFavoriteListing } from '../../services/userStore'
 import type { Listing } from '@shared/types'
 import { useEffect, useState } from 'react'
 
-const typeColors: Record<string, string> = {
-  OOH: 'bg-indigo-600',
-  DOOH: 'bg-violet-600',
-  TC: 'bg-blue-600',
-  'Radio & Print': 'bg-emerald-600',
-  Influencers: 'bg-orange-500',
-}
+const typeColors = Object.fromEntries(
+  Object.entries(MEDIA_CATEGORY_COLORS).map(([key, val]) => [key, val.solid]),
+) as Record<string, string>
 
 interface MediaCardProps {
   listing: Listing
@@ -48,9 +46,9 @@ export function MediaCard({ listing, onBook }: MediaCardProps) {
           className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
         />
         <span
-          className={`absolute top-3 left-3 rounded-md px-2.5 py-1 text-xs font-bold text-white ${typeColors[listing.mediaType]}`}
+          className={`absolute top-3 left-3 rounded-md px-2.5 py-1 text-xs font-bold text-white ${typeColors[normalizeMediaType(listing.mediaType)] ?? 'bg-slate-600'}`}
         >
-          {listing.mediaType}
+          {MEDIA_CATEGORY_LABELS[normalizeMediaType(listing.mediaType)]}
         </span>
         {listing.isDirectMedia && (
           <span className="absolute top-3 right-12 rounded-md bg-pink-500 px-2.5 py-1 text-xs font-bold text-white">
